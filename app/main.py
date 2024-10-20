@@ -19,7 +19,7 @@ app.add_middleware(
 
 # @app.on_event("startup")
 # def startup_event():
-#     # delete_all(engine=engine)
+# #     # delete_all(engine=engine)
     
 #     models.Base.metadata.drop_all(bind=engine)
 #     models.Base.metadata.create_all(engine)

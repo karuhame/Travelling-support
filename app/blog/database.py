@@ -66,8 +66,9 @@ def create_sample_data():
     try:
         # Kiểm tra xem có người dùng nào trong cơ sở dữ liệu không
         existing_users = db.execute(select(models.User)).scalars().all()
-        
+        print("check ini")
         if not existing_users:  # Nếu không có người dùng nào
+            print("check")
             # Tạo dữ liệu mẫu cho người dùng
             user1_data = schemas.User(username='user1', email='user1@gmail.com', password='123', role="guest")
             admin1_data = schemas.User(username='admin1', email='admin1@gmail.com', password='123', role="admin")
@@ -120,11 +121,21 @@ def create_sample_data():
                 )
                 db.add(city)
                 db.commit()
-                # Thêm 2 điểm đến cho mỗi user
-                for j in range(2):
+                # Thêm 1 điểm đến cho mỗi user
+                for j in range(1):
+                    
+                    address = models.Address(
+                        district = f"district of {cities[i]}",
+                        street = f"street of {cities[i]}",
+                        ward = f"ward of {cities[i]}",
+                        city = city
+                    )
+                    db.add(address)
+                    db.commit()
                     destination = models.Destination(
                         name=f"Destination {j+1} tại {cities[i]}",
-                        address=f"Địa chỉ {j+1}, {cities[i]}",
+                        # address=f"Địa chỉ {j+1}, {cities[i]}",
+                        address = address,
                         price_bottom=0,
                         price_top=0,
                         date_create=date.today(),
@@ -151,7 +162,7 @@ def create_sample_data():
                     # )
                     # destination.restaurant = restaurant
                     destination.hotel = hotel
-                    db.add_all([hotel,  destination])
+                    db.add_all([hotel,  destination,address ])
                     db.commit()
                     
                     

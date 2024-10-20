@@ -48,19 +48,6 @@ class BusinessType(Base):
     # Relationship
     user = relationship("User", back_populates="business_type")
 
-class City(Base):
-    __tablename__ = 'city'
-    
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(50), default='Unnamed Destination')
-    description = Column(String(50), default='No Description')
-    
-    # Foreign Key
-    user_id = Column(Integer, ForeignKey('user.id', ondelete='CASCADE'))
-
-    # Relationship
-    user = relationship("User", back_populates="city")
-    destinations = relationship("Destination", back_populates="city")
 class Destination(Base):
     __tablename__ = 'destination'
     
@@ -82,16 +69,52 @@ class Destination(Base):
 
     
     # Relationship
-    city = relationship("City", back_populates="destinations")
     user = relationship("User", back_populates="destinations")
     tags = relationship("Tag", back_populates="destinations")
     reviews = relationship("Review", back_populates="destination")
+    images = relationship("DestinationImage", back_populates="destination")
+    
     restaurant = relationship("Restaurant", back_populates="destination", uselist=False)
     hotel = relationship("Hotel", back_populates="destination", uselist=False)
+    
     # destination_journeys = relationship("DestinationJourney", back_populates="destination")  
     tours = relationship("Tour",secondary="destination_tour", back_populates="destinations")
     journeys = relationship("Journey",secondary="destination_journey", back_populates="destinations")
 
+class DestinationImage(Base):
+    __tablename__ = 'destinationImage'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    url = Column(String(100))
+    destination_id = Column(Integer, ForeignKey('destination.id'))
+
+    destination = relationship("Destination", back_populates="images", uselist=False)
+class City(Base):
+    __tablename__ = 'city'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(50), default='Unnamed Destination')
+    description = Column(String(50), default='No Description')
+    
+    # Foreign Key
+    user_id = Column(Integer, ForeignKey('user.id', ondelete='CASCADE'))
+
+    # Relationship
+    user = relationship("User", back_populates="city")
+    addresses = relationship("Address", back_populates="city")
+    
+class Address(Base):
+    __tablename__ = 'address'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    district = Column(String(100), nullable=True)
+    street = Column(String(100), nullable=True)
+    ward = Column(String(100), nullable=True)
+
+    city_id = Column(Integer, ForeignKey('city.id')) 
+    
+    city = relationship("City", back_populates="addresses", uselist=False)
+    
 class Restaurant(Base):
     __tablename__ = 'restaurant'
     
