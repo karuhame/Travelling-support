@@ -74,13 +74,29 @@ class Destination(BaseModel):
 class City(BaseModel):
     name: str
     description: str
-    
+
 class ShowCity(City):
     id: int
     # destinations: List[Destination] = []
     
     class Config():
         from_attributes = True
+
+class Address(BaseModel):
+    district: str
+    street: str
+    ward: str
+    city_id: int
+
+
+class ShowAddress(Address):
+    id: int
+    
+    class Config():
+        from_attributes = True
+
+class Destination_Address(Address, Destination):
+    pass
 
 class Restaurant(BaseModel):
     cuisine: Optional[str] = None
@@ -104,7 +120,7 @@ class ShowHotel(Hotel):
 
 class Destination(BaseModel):
     name : str
-    address : str
+    address : Optional[ShowAddress]= None
     price_bottom : int  
     price_top : int  
     date_create : date 

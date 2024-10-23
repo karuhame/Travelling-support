@@ -53,7 +53,6 @@ class Destination(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(50), default='Unnamed Destination')
-    address = Column(String(50), nullable=True, default='Unknown Address')
     price_bottom = Column(Integer, nullable=True, default=0)  
     price_top = Column(Integer, nullable=True, default=0)  
     date_create = Column(Date, nullable=True, default=None)  
@@ -63,7 +62,7 @@ class Destination(Base):
 
     # Foreign Key
     user_id = Column(Integer, ForeignKey('user.id', name="fk_destination_user", ondelete='CASCADE'))
-    city_id = Column(Integer, ForeignKey('city.id', name="fk_destination_city", ondelete='CASCADE'))
+    address_id = Column(Integer, ForeignKey('address.id', name="fk_destination_address", ondelete='CASCADE'))
     hotel_id = Column(Integer, ForeignKey('hotel.id', name="fk_destination_hotel", ondelete='CASCADE'), nullable=True)
     restaurant_id = Column(Integer, ForeignKey('restaurant.id', name="fk_destination_restaurant", ondelete='CASCADE'), nullable=True)
 
@@ -72,23 +71,29 @@ class Destination(Base):
     user = relationship("User", back_populates="destinations")
     tags = relationship("Tag", back_populates="destinations")
     reviews = relationship("Review", back_populates="destination")
-    images = relationship("DestinationImage", back_populates="destination")
+    images = relationship("Image", back_populates="destination")
     
     restaurant = relationship("Restaurant", back_populates="destination", uselist=False)
     hotel = relationship("Hotel", back_populates="destination", uselist=False)
-    
+    address = relationship("Address", back_populates="destination", uselist=False)
     # destination_journeys = relationship("DestinationJourney", back_populates="destination")  
     tours = relationship("Tour",secondary="destination_tour", back_populates="destinations")
     journeys = relationship("Journey",secondary="destination_journey", back_populates="destinations")
 
-class DestinationImage(Base):
-    __tablename__ = 'destinationImage'
+class Image(Base):
+    __tablename__ = 'image'
     
     id = Column(Integer, primary_key=True, index=True)
     url = Column(String(100))
-    destination_id = Column(Integer, ForeignKey('destination.id'))
+    
+    # Khóa ngoại cho City
+    city_id = Column(Integer, ForeignKey('city.id'), nullable=True)
+    city = relationship("City", back_populates="images", uselist=False)
 
+    # Khóa ngoại cho Destination
+    destination_id = Column(Integer, ForeignKey('destination.id'), nullable=True)
     destination = relationship("Destination", back_populates="images", uselist=False)
+    
 class City(Base):
     __tablename__ = 'city'
     
@@ -101,7 +106,10 @@ class City(Base):
 
     # Relationship
     user = relationship("User", back_populates="city")
+    
     addresses = relationship("Address", back_populates="city")
+    images = relationship("Image", back_populates="city")
+    
     
 class Address(Base):
     __tablename__ = 'address'
@@ -114,7 +122,7 @@ class Address(Base):
     city_id = Column(Integer, ForeignKey('city.id')) 
     
     city = relationship("City", back_populates="addresses", uselist=False)
-    
+    destination = relationship("Destination", back_populates="address", uselist=False)
 class Restaurant(Base):
     __tablename__ = 'restaurant'
     

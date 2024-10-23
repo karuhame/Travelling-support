@@ -66,9 +66,7 @@ def create_sample_data():
     try:
         # Kiểm tra xem có người dùng nào trong cơ sở dữ liệu không
         existing_users = db.execute(select(models.User)).scalars().all()
-        print("check ini")
         if not existing_users:  # Nếu không có người dùng nào
-            print("check")
             # Tạo dữ liệu mẫu cho người dùng
             user1_data = schemas.User(username='user1', email='user1@gmail.com', password='123', role="guest")
             admin1_data = schemas.User(username='admin1', email='admin1@gmail.com', password='123', role="admin")
@@ -143,7 +141,6 @@ def create_sample_data():
                         opentime="00:00:00",
                         duration=24,
                         user_id=user.id,
-                        city_id=city.id  # Liên kết với city vừa tạo
                     )
                     db.add(destination)
                     db.commit()

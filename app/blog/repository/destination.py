@@ -4,27 +4,42 @@ from blog import models, schemas
 from fastapi import HTTPException, status
 from blog.hashing import Hash
 
-def create_by_cityID(city_id: int, request: schemas.Destination, db: Session):
+def create(request: schemas.Destination_Address, db: Session):
     try:
-        new_destination = models.Destination(
-            name = request.name,
-            address = request.address,
-            price_bottom = request.price_bottom,
-            price_top = request.price_top,
-            date_create = request.date_create,
-            age = request.age,
-            opentime = request.opentime,
-            duration = request.duration,
-            city_id = city_id
+        # Tạo địa chỉ mới
+        new_address = models.Address(
+            district=request.district,
+            street=request.street,
+            ward=request.ward,
+            city_id=request.city_id  # Sử dụng city_id làm khóa ngoại
         )
+        
+        # Thêm địa chỉ vào cơ sở dữ liệu
+        db.add(new_address)
+        db.commit()  # Commit để lưu địa chỉ
+        db.refresh(new_address)  # Làm mới địa chỉ để lấy ID
+
+        # Tạo điểm đến mới
+        new_destination = models.Destination(
+            name=request.name,
+            price_bottom=request.price_bottom,
+            price_top=request.price_top,
+            date_create=request.date_create,
+            age=request.age,
+            opentime=request.opentime,
+            duration=request.duration,
+            address=new_address  # Liên kết đến địa chỉ vừa tạo
+        )
+        
+        # Thêm điểm đến vào cơ sở dữ liệu
         db.add(new_destination)
-        db.commit()  # Chờ hoàn tất việc commit
-        db.refresh(new_destination)  # Chờ làm mới đối tượng mới
+        db.commit()  # Commit để lưu điểm đến
+        db.refresh(new_destination)  # Làm mới đối tượng mới
+
         return new_destination
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=f"Error creating destination: {str(e)}")
-
 def get_by_id(id: int, db: Session):
     try:
         destination = db.query(models.Destination).filter(models.Destination.id == id).first()  # Chờ truy vấn
@@ -38,7 +53,7 @@ def get_by_id(id: int, db: Session):
                             detail=f"Error retrieving destination: {str(e)}")
 def get_by_city_id(city_id: int, db: Session):
     try:
-        destinations = db.query(models.Destination).filter(models.Destination.city_id == city_id).all()  # Chờ truy vấn
+        destinations = db.query(models.Destination).join(models.Address).filter(models.Address.city_id == city_id).all()        
         if not destinations:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                                 detail=f"destinations with the city_id {city_id} is not available")

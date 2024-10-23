@@ -18,8 +18,8 @@ def delete_destination_by_id(id: int, db: Session = Depends(get_db)):
     return destination.delete_by_id(id, db)
 
 @router.post("/", response_model=schemas.ShowDestination)
-def create_destination_by_cityID(request: schemas.Destination, city_id: int, db: Session = Depends(get_db)):
-    return destination.create_by_cityID(request, city_id, db)
+def create_destination(request: schemas.Destination_Address, db: Session = Depends(get_db)):
+    return destination.create(request, db)
 
 @router.post("/hotel/{destination_id}", response_model=schemas.ShowHotel)
 def create_destination_by_cityID(request: schemas.Hotel, destination_id: int, db: Session = Depends(get_db)):
