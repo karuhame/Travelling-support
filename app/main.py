@@ -17,13 +17,13 @@ app.add_middleware(
 )
 
 
-@app.on_event("startup")
-def startup_event():
-#     # delete_all(engine=engine)
+# @app.on_event("startup")
+# def startup_event():
+# #     # delete_all(engine=engine)
     
-    models.Base.metadata.drop_all(bind=engine)
-    models.Base.metadata.create_all(engine)
-    create_sample_data() 
+#     models.Base.metadata.drop_all(bind=engine)
+#     models.Base.metadata.create_all(engine)
+#     create_sample_data() 
 
 app.include_router(authentication.router)
 app.include_router(user.router)

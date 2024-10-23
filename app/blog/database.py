@@ -7,13 +7,13 @@ from sqlalchemy.orm import sessionmaker
 import os
 from dotenv import load_dotenv
 import pymysql
+from datetime import date  # Đảm bảo bạn import date
+from fastapi import HTTPException
 
 from blog import repository
 from blog import models
 from . import schemas  # Import schemas nếu cần
-from datetime import date  # Đảm bảo bạn import date
-from fastapi import HTTPException
-
+from blog.repository import image
 # DATABASE_URL=mysql+pymysql://travel_user:password@localhost:3306/db_connect
 # cnx = mysql.connector.connect(user="travel_user", password="{your_password}", host="travel-sql.mysql.database.azure.com", port=3306, database="{your_database}", ssl_ca="{ca-cert filename}", ssl_disabled=False)
 
@@ -119,6 +119,11 @@ def create_sample_data():
                 )
                 db.add(city)
                 db.commit()
+                db.refresh(city)
+                
+                # crawl data cho city
+                image.crawl_image(db=db, city=city )
+                
                 # Thêm 1 điểm đến cho mỗi user
                 for j in range(1):
                     
@@ -144,6 +149,9 @@ def create_sample_data():
                     )
                     db.add(destination)
                     db.commit()
+                    db.refresh(destination)
+                    # repository.image.crawl_image(db=db, destination=destination )
+                    
                     hotel = models.Hotel(
                         property_amenities='Free WiFi, Pool, Gym',
                         room_features='AC, TV, Minibar',

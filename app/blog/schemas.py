@@ -60,6 +60,17 @@ class SignUp(BaseModel):
     email: str
     password:str
     username: str
+
+     
+class Image(BaseModel):
+    id: int
+    city_id: Optional[int] = None
+    destination_id: Optional[int] = None
+    url: str
+    
+class ShowImage(BaseModel):
+    id: int
+    url: str
     
 class Destination(BaseModel):
     name : str
@@ -70,14 +81,15 @@ class Destination(BaseModel):
     age : int  
     opentime : time  
     duration : int  
-    
+
+
 class City(BaseModel):
     name: str
     description: str
 
 class ShowCity(City):
     id: int
-    # destinations: List[Destination] = []
+    images: List[ShowImage]
     
     class Config():
         from_attributes = True
@@ -153,3 +165,4 @@ class ShowReview(Review):
     destination_id :int
     class Config():
         from_attributes = True
+   

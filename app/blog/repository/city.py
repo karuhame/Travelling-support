@@ -35,6 +35,7 @@ def get_city_by_id(id: int, db: Session):
 def get_all_city(db: Session):
     try:
         cities = db.query(models.City).all()  # Chờ truy vấn
+        print(cities[0].images)
         return cities
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to retrieve city info")
