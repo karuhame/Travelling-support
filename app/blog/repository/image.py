@@ -18,10 +18,18 @@ from bs4 import BeautifulSoup
 
 
 
+import os
+from dotenv import load_dotenv
+
+# Tải các biến môi trường từ tệp .env
+load_dotenv()
+AZURE_CONNECTION_STRING = os.getenv('AZURE_CONNECTION_STRING')
+
+
 
 class ImageHandler:
     def __init__(self, root_dir= 'travel-image', container_name = 'travel-image'):
-        self.connection_string = "DefaultEndpointsProtocol=https;AccountName=tripstoragepbl6;AccountKey=79v6G9xOzMJ/h3QRfOljU8BR9OZ/+UAJJmJwf0LuhArM2FfI9ziKTQVMwzI3+842xfew8uQJGLOv+AStnWHUTA==;EndpointSuffix=core.windows.net"
+        self.connection_string = AZURE_CONNECTION_STRING
         self.container_name = container_name
         self.root_dir = root_dir
         if not os.path.exists(self.root_dir):
@@ -229,7 +237,7 @@ class ImageHandler:
                     destination_id=destination.id
                 )
                 db.add(img)  # Thêm vào session
-                db.commit()  # Lưu lại để lấy id của image
+                db.commit()  # Lưu lại để lấy id của image                        
                 db.refresh(img)  # Làm mới đối tượng để lấy id
 
                 # Tải lên hình ảnh lên Azure
