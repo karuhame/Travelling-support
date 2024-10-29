@@ -159,13 +159,14 @@ class GoogleImageCrawler:
 
 # Example usage
 if __name__ == "__main__":
-    google_crawler = GoogleImageCrawler()
+    pass
+    # google_crawler = GoogleImageCrawler()
             
-    download_links = google_crawler.crawl(keyword='Du lịch Hà Nội', max_num=3)
-    google_crawler.close()
+    # download_links = google_crawler.crawl(keyword='Du lịch Hà Nội', max_num=3)
+    # google_crawler.close()
     
-    for index, img_link in enumerate(download_links):
-        img_file_name = google_crawler.download_url(img_url=img_link, file_name=f"cities/{index}.png")
+    # for index, img_link in enumerate(download_links):
+    #     img_file_name = google_crawler.download_url(img_url=img_link, file_name=f"cities/{index}.png")
     # google_crawler = GoogleImageCrawler()
 
     # # Gọi hàm crawl để thu thập hình ảnh

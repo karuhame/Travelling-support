@@ -41,6 +41,18 @@ def update_restaurant_info_by_id(request: schemas.Restaurant, restaurant_id: int
 def update_hotel_info_by_id(request: schemas.Hotel, hotel_id: int, db: Session = Depends(get_db)):
     return destination.update_hotel_info_by_id(request=request, id=hotel_id, db=db)
 
+@router.get("/hotel/{hotel_id}")
+def get_hotel_info_by_id(hotel_id: int, db: Session = Depends(get_db)):
+    return destination.get_hotel_info( hotel_id=hotel_id, db=db)
+
+@router.get("/hotels/")
+def get_all_hotels( db: Session = Depends(get_db)):
+    return destination.get_all_hotel(db=db)
+
+@router.get("/popular/{city_id}")
+def get_popular_destination_by_cityID(city_id: int, db: Session = Depends(get_db)):
+    return destination.get_popular_destinations_by_city_ID(city_id=city_id, db=db)
+    
 @router.get("/")
 def get_destination(
     id: int = None,
@@ -52,6 +64,7 @@ def get_destination(
     if id:
         # Lấy destination theo ID
         dest = destination.get_by_id(id, db)
+        
         
         if get_rating:
             rating_info = destination.get_ratings_and_reviews_number_of_destinationID(dest.id, db)

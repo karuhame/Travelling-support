@@ -13,7 +13,7 @@ from fastapi import HTTPException
 from blog import repository
 from blog import models
 from . import schemas  # Import schemas nếu cần
-from blog.repository import image
+from blog.repository.image import ImageHandler
 # DATABASE_URL=mysql+pymysql://travel_user:password@localhost:3306/db_connect
 # cnx = mysql.connector.connect(user="travel_user", password="{your_password}", host="travel-sql.mysql.database.azure.com", port=3306, database="{your_database}", ssl_ca="{ca-cert filename}", ssl_disabled=False)
 
@@ -122,7 +122,8 @@ def create_sample_data():
                 db.refresh(city)
                 
                 # crawl data cho city
-                image.crawl_image(db=db, city=city )
+                ImageHandler.crawl_image(db=db, city= city)
+                # image.crawl_image(db=db, city=city )
                 
                 # Thêm 1 điểm đến cho mỗi user
                 for j in range(1):
@@ -136,6 +137,7 @@ def create_sample_data():
                     db.add(address)
                     db.commit()
                     destination = models.Destination(
+                        description = "description",
                         name=f"Destination {j+1} tại {cities[i]}",
                         # address=f"Địa chỉ {j+1}, {cities[i]}",
                         address = address,
@@ -150,7 +152,9 @@ def create_sample_data():
                     db.add(destination)
                     db.commit()
                     db.refresh(destination)
-                    # repository.image.crawl_image(db=db, destination=destination )
+                    
+                    imageHandler = ImageHandler()
+                    imageHandler.fake_db_destination(db, destination=destination)
                     
                     hotel = models.Hotel(
                         property_amenities='Free WiFi, Pool, Gym',
@@ -172,7 +176,7 @@ def create_sample_data():
                     
                     
                     # Tạo 3-5 reviews cho mỗi destination
-                    num_reviews = random.randint(1, 3)
+                    num_reviews = random.randint(0, 2)
                     for k in range(num_reviews):
                         review = models.Review(
                             title=f"Review {k + 1} for Destination {j + 1}",
@@ -183,6 +187,10 @@ def create_sample_data():
                             destination_id=destination.id  # Gán destination_id của destination đã tạo
                         )
                         db.add(review)
+                        db.commit()
+                        db.refresh(review)
+                        imageHandler.fake_db_review(db, review=review)
+                        
                     
             db.commit()
             

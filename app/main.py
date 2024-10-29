@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from blog import models
 from blog.database import engine, create_sample_data, delete_all
-from blog.routers import blog, user, authentication, userInfo, city, review, destination
+from blog.routers import blog,tour, user, authentication, userInfo, city, review, destination
 from fastapi.middleware.cors import CORSMiddleware
 
         
@@ -31,6 +31,8 @@ app.include_router(userInfo.router)
 app.include_router(city.router)
 app.include_router(review.router)
 app.include_router(destination.router)
+app.include_router(tour.router)
+
 
 
 

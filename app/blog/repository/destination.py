@@ -1,4 +1,5 @@
 from typing import List
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from blog import models, schemas
 from fastapi import HTTPException, status
@@ -42,22 +43,49 @@ def create(request: schemas.Destination_Address, db: Session):
                             detail=f"Error creating destination: {str(e)}")
 def get_by_id(id: int, db: Session):
     try:
-        destination = db.query(models.Destination).filter(models.Destination.id == id).first()  # Chờ truy vấn
-        
+        destination = db.query(models.Destination).filter(models.Destination.id == id).first()
         if not destination:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                                detail=f"destination with the id {id} is not available")
-        return destination
+            return {"detail": "Không tìm thấy điểm đến."}
+
+        # Chuyển đổi hình ảnh thành ShowImage
+        images = [schemas.ShowImage.from_orm(img) for img in destination.images] if destination.images else None
+
+        # Tạo từ điển cho dữ liệu điểm đến
+        destination_data = {
+            "id": destination.id,
+            "name": destination.name,
+            "address": destination.address,
+            "price_bottom": destination.price_bottom,
+            "price_top": destination.price_top,
+            "date_create": destination.date_create,
+            "age": destination.age,
+            "opentime": destination.opentime,
+            "duration": destination.duration,
+            "images": images
+        }
+
+        # Trả về ShowDestination đã được xác thực
+        return schemas.ShowDestination(**destination_data)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=f"Error retrieving destination: {str(e)}")
+
 def get_by_city_id(city_id: int, db: Session):
     try:
-        destinations = db.query(models.Destination).join(models.Address).filter(models.Address.city_id == city_id).all()        
+        destinations = db.query(models.Destination).join(models.Address).filter(models.Address.city_id == city_id).all()
+        
         if not destinations:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                                detail=f"destinations with the city_id {city_id} is not available")
-        return destinations
+            return {"detail": "No destinations found for the specified city ID."}
+
+        results = []
+        
+        for dest in destinations:
+            # Chuyển đổi danh sách các đối tượng Image thành ImageSchema, xử lý trường hợp không có ảnh
+            dest = get_by_id(dest.id, db)
+            
+            results.append(dest)
+
+        return results
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=f"Error retrieving destinations: {str(e)}")
@@ -229,3 +257,136 @@ def get_ratings_and_reviews_number_of_destinationID(destination_id: int, db: Ses
             "ratings": 0,
             "numberOfReviews": 0
         }
+def get_hotel_info(hotel_id: int, db: Session):
+    # Truy vấn để lấy thông tin khách sạn
+    hotel = db.query(models.Hotel).filter(models.Hotel.id == hotel_id).first()
+    
+    if hotel is None:
+        return {"error": "Hotel not found"}
+
+    # Lấy thông tin điểm đến liên quan
+    destination = db.query(models.Destination).filter(models.Destination.hotel_id == hotel_id).first()
+    
+    # Lấy thông tin địa chỉ
+    address = db.query(models.Address).filter(models.Address.id == destination.address_id).first() if destination else None
+
+    # Lấy thông tin đánh giá liên quan
+    reviews = db.query(models.Review).filter(models.Review.destination_id == destination.id).all()
+
+    # Tính toán số lượng đánh giá và tổng điểm
+    num_of_reviews = len(reviews)
+    total_rating = sum(review.rating for review in reviews) if num_of_reviews > 0 else 0
+    average_rating = total_rating // num_of_reviews if num_of_reviews > 0 else 0
+
+    # Gom các trường trong bảng Address thành một chuỗi
+    address_string = f"{address.ward}, {address.district}, {address.street}" if address else "No address available"
+
+    # Lấy tất cả URL hình ảnh liên quan đến khách sạn
+    images = db.query(models.Image).filter(models.Image.destination_id == destination.id).all() if destination else []
+    img_urls = [image.url for image in images]
+
+    # Tạo từ điển với thông tin khách sạn
+    hotel_info = {
+        "id": hotel.id,
+        "name": destination.name ,
+        "address": address_string,
+        "price": destination.price_bottom if destination else 0,
+        "phone": hotel.phone,
+        "email": hotel.email,
+        "website": hotel.website,
+        "features": hotel.room_features.split(",") if hotel.room_features else [],
+        "amenities": hotel.property_amenities.split(",") if hotel.property_amenities else [],
+        "description": destination.description, 
+        "rating": average_rating,
+        "numOfReviews": num_of_reviews,
+        "imgURL": img_urls
+    }
+
+    return hotel_info
+
+def get_all_hotel(db: Session):
+    # Truy vấn để lấy tất cả khách sạn
+    hotels = db.query(models.Hotel).all()
+    
+    hotel_list = []
+
+    for hotel in hotels:
+        # Lấy thông tin điểm đến liên quan
+        destination = db.query(models.Destination).filter(models.Destination.hotel_id == hotel.id).first()
+        
+        # Lấy thông tin đánh giá liên quan
+        reviews = db.query(models.Review).filter(models.Review.destination_id == destination.id).all()
+
+        # Tính toán số lượng đánh giá và tổng điểm
+        num_of_reviews = len(reviews)
+        total_rating = sum(review.rating for review in reviews) if num_of_reviews > 0 else 0
+        average_rating = total_rating // num_of_reviews if num_of_reviews > 0 else 0
+        
+        # Lấy thông tin địa chỉ từ điểm đến
+        address_string = (
+            f"{destination.address.district}, {destination.address.street}, {destination.address.ward}"
+            if destination and destination.address else "No address available"
+        )
+
+        # Lấy tất cả URL hình ảnh liên quan đến khách sạn
+        images = db.query(models.Image).filter(models.Image.destination_id == destination.id).all() if destination else []
+        img_urls = [image.url for image in images]
+
+        # Tạo từ điển với thông tin khách sạn
+        hotel_info = {
+            "id": hotel.id,
+            "name": destination.name if destination else "Unnamed Destination",
+            "address": address_string,
+            "rating": average_rating,
+            "numOfReviews": num_of_reviews,
+            "features": hotel.room_features.split(",") if hotel.room_features else [],
+            "imgURL": img_urls[0] if img_urls else None  # Lấy URL đầu tiên nếu có
+        }
+
+        hotel_list.append(hotel_info)
+
+    return hotel_list
+
+def get_popular_destinations_by_city_ID(city_id: int, db: Session):
+    # Truy vấn để lấy danh sách các điểm đến phổ biến
+    popular_destinations = (
+        db.query(models.Destination)
+        .outerjoin(models.Review, models.Destination.id == models.Review.destination_id)  # Kết hợp với bảng Review
+        .filter(models.Destination.address.has(city_id=city_id))  # Lọc theo city_id
+        .group_by(models.Destination.id)  # Nhóm theo id của Destination
+        .having(func.avg(models.Review.rating) >= 4.5)  # Điều kiện xếp hạng
+        .having(func.count(models.Review.id) >= 1000)  # Điều kiện số lượng đánh giá
+        .all()
+    )
+
+    # Tạo danh sách chứa thông tin các điểm đến
+    destination_list = []
+    for destination in popular_destinations:
+        # Lấy thông tin địa chỉ
+        address = destination.address
+        location = f"{address.street}, {address.district}, {address.city.name}, Vietnam" if address else "Unknown Location"
+
+        # Lấy tất cả hình ảnh liên quan đến điểm đến
+        images = db.query(models.Image).filter(models.Image.destination_id == destination.id).limit(5).all()  # Lấy tối đa 5 hình ảnh
+        image_urls = [image.url for image in images]
+
+        # Tính tổng số lượng đánh giá
+        num_of_reviews = len(destination.reviews)
+
+        # Tạo từ điển với thông tin điểm đến
+        destination_info = {
+            "id": destination.id,
+            "name": destination.name,
+            "category": "popular",
+            "image": image_urls,
+            "location": location,
+            "review": num_of_reviews,
+            "price": destination.price_bottom,  
+
+            "description": destination.description,  
+            "rate": func.avg(models.Review.rating)  
+        }
+
+        destination_list.append(destination_info)
+
+    return destination_list

@@ -52,6 +52,7 @@ class Destination(Base):
     __tablename__ = 'destination'
     
     id = Column(Integer, primary_key=True, index=True)
+    description = Column(String(200), default='Description')
     name = Column(String(50), default='Unnamed Destination')
     price_bottom = Column(Integer, nullable=True, default=0)  
     price_top = Column(Integer, nullable=True, default=0)  
@@ -94,6 +95,8 @@ class Image(Base):
     destination_id = Column(Integer, ForeignKey('destination.id'), nullable=True)
     destination = relationship("Destination", back_populates="images", uselist=False)
     
+    review_id = Column(Integer, ForeignKey('review.id'), nullable=True)
+    review = relationship("Review", back_populates="images", uselist=False)
 class City(Base):
     __tablename__ = 'city'
     
@@ -109,7 +112,7 @@ class City(Base):
     
     addresses = relationship("Address", back_populates="city")
     images = relationship("Image", back_populates="city")
-    
+    tours = relationship("Tour", back_populates="city")
     
 class Address(Base):
     __tablename__ = 'address'
@@ -123,16 +126,6 @@ class Address(Base):
     
     city = relationship("City", back_populates="addresses", uselist=False)
     destination = relationship("Destination", back_populates="address", uselist=False)
-class Restaurant(Base):
-    __tablename__ = 'restaurant'
-    
-    id = Column(Integer, primary_key=True, index=True)
-    cuisine = Column(String(50), default='Mixed')
-    special_diet = Column(String(50), nullable=True)
-    
-    # destination_id = Column(Integer, ForeignKey('destination.id', name="fk_hotel_destination", ondelete='CASCADE'), nullable=True)
-
-    destination = relationship("Destination", back_populates="restaurant")
 
     
 class Hotel(Base):
@@ -145,24 +138,42 @@ class Hotel(Base):
     hotel_class = Column(Integer, default=0)
     hotel_styles = Column(String(255), default='Ocean view, Trendy')
     Languages = Column(String(255), default='Vietnamese, English, Chinese')
- 
+    phone =  Column(String(255), nullable=True)
+    email =  Column(String(255), nullable=True)
+    website =  Column(String(255), nullable=True)
+    
     
     # destination_id = Column(Integer, ForeignKey('destination.id', name="fk_hotel_destination", ondelete='CASCADE'), nullable=True)
 
     destination = relationship("Destination", back_populates="hotel")
 
+class Restaurant(Base):
+    __tablename__ = 'restaurant'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    cuisine = Column(String(50), default='Mixed')
+    special_diet = Column(String(50), nullable=True)
+    
+    # destination_id = Column(Integer, ForeignKey('destination.id', name="fk_hotel_destination", ondelete='CASCADE'), nullable=True)
+
+    destination = relationship("Destination", back_populates="restaurant")
 class Tour(Base):
     __tablename__ = 'tour'
     
     id = Column(Integer, primary_key=True, index=True)    
     name = Column(String(255))
+    description = Column(String(255))
+    duration = Column(Integer, nullable=True, default=0)  
     
     user_id = Column(Integer, ForeignKey('user.id', ondelete='CASCADE'))
+    city_id = Column(Integer, ForeignKey('city.id', ondelete='CASCADE'))
     
     # Relationship
     user = relationship("User", back_populates="tours")
+    city = relationship("City", back_populates="tours")
     # Relationship with Destination through the intermediary table
     destinations = relationship("Destination", secondary="destination_tour", back_populates="tours")
+    reviews = relationship("Review", back_populates="tour")
 
 
 class DestinationTour(Base):
@@ -214,10 +225,13 @@ class Review(Base):
     # Foreign Key
     user_id = Column(Integer, ForeignKey('user.id', ondelete='CASCADE'))
     destination_id = Column(Integer, ForeignKey('destination.id', ondelete='CASCADE'))
+    tour_id = Column(Integer, ForeignKey('tour.id', ondelete='CASCADE'))
 
     # Relationship
     user = relationship("User", back_populates="reviews")
     destination = relationship("Destination", back_populates="reviews")
+    tour = relationship("Tour", back_populates="reviews")
+    images = relationship("Image", back_populates="review")
 
 class Forum(Base):
     __tablename__ = 'forum'

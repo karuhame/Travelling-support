@@ -12,6 +12,16 @@ class Blog(BlogBase):
 class UserInfoBase(BaseModel):
     business_description: str# Thông tin mô tả doanh nghiệp
     phone_number: str
+    
+    
+class Tour(BaseModel):
+    id: int
+    name: str
+    description: str
+    user_id: int
+    city_id: int
+    
+    destination_ids: List[int]
 
 class User(BaseModel):
     username:str
@@ -68,19 +78,15 @@ class Image(BaseModel):
     destination_id: Optional[int] = None
     url: str
     
+    class Config():
+        from_attributes = True
+    
 class ShowImage(BaseModel):
     id: int
     url: str
     
-class Destination(BaseModel):
-    name : str
-    address : str
-    price_bottom : int
-    price_top : int  
-    date_create : date  
-    age : int  
-    opentime : time  
-    duration : int  
+    class Config():
+            from_attributes = True
 
 
 class City(BaseModel):
@@ -106,7 +112,18 @@ class ShowAddress(Address):
     
     class Config():
         from_attributes = True
-
+class Destination(BaseModel):
+    name : str
+    address : Optional[ShowAddress]= None
+    price_bottom : int  
+    price_top : int  
+    date_create : date 
+    age : int  
+    opentime : time
+    duration : int 
+    
+    class Config():
+        from_attributes = True
 class Destination_Address(Address, Destination):
     pass
 
@@ -130,15 +147,7 @@ class ShowHotel(Hotel):
     class Config():
         from_attributes = True
 
-class Destination(BaseModel):
-    name : str
-    address : Optional[ShowAddress]= None
-    price_bottom : int  
-    price_top : int  
-    date_create : date 
-    age : int  
-    opentime : time
-    duration : int 
+
 
 class ShowDestination(Destination):
     id: int
@@ -146,6 +155,7 @@ class ShowDestination(Destination):
     restaurant_id: Optional[int] = None
     hotel: Optional[ShowHotel] = None
     restaurant: Optional[ShowRestaurant] = None
+    images: Optional[List[ShowImage]] = None
     
     class Config():
         from_attributes = True
@@ -163,6 +173,7 @@ class ShowReview(Review):
     # Foreign Key
     user_id : int
     destination_id :int
+    images: List[ShowImage]
     class Config():
         from_attributes = True
    
