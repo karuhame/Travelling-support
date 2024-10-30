@@ -20,7 +20,6 @@ def create(db: Session,
         # Liên kết các destination_id với tour
         for destination_id in request.destination_ids:
             destination = db.query(models.Destination).filter(models.Destination.id == destination_id).first()
-            print(destination.id)
             if destination:
                 new_tour.duration += destination.duration
                 new_tour.destinations.append(destination)  # Thêm destination vào tour
@@ -64,6 +63,7 @@ def get_all_tour(db: Session):
             "description": tour.description,
             "user_id": tour.user_id,
             "destinations": [destination.id for destination in tour.destinations],  # Lấy danh sách ID của các destination
+            "images": [destination.images[0].url if destination.images else None for destination in tour.destinations],
         }
         tour_list.append(tour_info)
 
