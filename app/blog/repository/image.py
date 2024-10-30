@@ -1,7 +1,6 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from blog.hashing import Hash
-import crawlData
 
 
 import base64
@@ -174,10 +173,10 @@ class ImageHandler:
     def crawl_image(db: Session, city = None, destination = None):
             
         from blog import models, schemas
-            
+        
+        google_crawler = ImageHandler()
         if city:
             obj = city
-            google_crawler = crawlData.GoogleImageCrawler()
             
             download_links = google_crawler.crawl(keyword=f'Du lịch {obj.name}', max_num=3)
             google_crawler.close()
@@ -200,7 +199,6 @@ class ImageHandler:
                 db.refresh(img)
         else:
             obj = destination
-            google_crawler = crawlData.GoogleImageCrawler()
             
             download_imgs = google_crawler.crawl(keyword=f'Du lịch {obj.name}', max_num=3)
             google_crawler.close()
