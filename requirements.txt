@@ -13,8 +13,14 @@ PyJWT
 selenium
 motor
 requests
-
+azure-storage-blob
+beautifulsoup4
 
 h11
 starlette
 websockets
+
+
+pandas
+loguru
+Pillow
