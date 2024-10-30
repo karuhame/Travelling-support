@@ -17,11 +17,10 @@ get_db = database.get_db
 def create_city(request: schemas.City, db: Session = Depends(get_db)):
     return city.create_city(request, db)
 
-@router.get("/{id}", response_model=schemas.ShowCity)
+@router.get("/{id}")
 def get_city_by_id(id: int, db: Session = Depends(get_db)):
-    print(id)
-    return city.get_city_by_id(id, db)
-
+    result = city.get_city_by_id(id, db)
+    return schemas.ShowCity.from_orm(result)
 @router.get("/", response_model=List[schemas.ShowCity])
 def get_all_city(db: Session = Depends(get_db)):
     return city.get_all_city(db)

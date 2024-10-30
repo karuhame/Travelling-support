@@ -155,7 +155,7 @@ class ShowDestination(Destination):
     restaurant_id: Optional[int] = None
     hotel: Optional[ShowHotel] = None
     restaurant: Optional[ShowRestaurant] = None
-    images: Optional[List[ShowImage]] = None
+    images: List[ShowImage]
     
     class Config():
         from_attributes = True

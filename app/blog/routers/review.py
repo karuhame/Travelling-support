@@ -49,13 +49,13 @@ def get_reviews(
     if review_id:
         rv = review.get_by_id(review_id, db)
         return schemas.ShowReview.from_orm(rv)
-    
-    if destination_id and user_id:
-        reviews = review.get_reviews_of_user_in_1_destination_by_userId_and_destinationID(destination_id, user_id, db)
-        return [schemas.ShowReview.from_orm(rv).dict() for rv in reviews]
-    if destination_id:
-        reviews=  review.get_reviews_of_destination_by_destinationId(destination_id, db)
-        return [schemas.ShowReview.from_orm(rv).dict() for rv in reviews]
 
+    if destination_id:
+        if user_id:
+            reviews = review.get_reviews_of_user_in_1_destination_by_userId_and_destinationID(destination_id, user_id, db)
+        else:
+            reviews = review.get_reviews_of_destination_by_destinationId(destination_id, db)
+        
+        return [schemas.ShowReview.from_orm(rv).dict() for rv in reviews]
 
     raise HTTPException(status_code=400, detail="You must provide either review_id, destination_id, or both user_id and destination_id.")

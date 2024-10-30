@@ -52,7 +52,7 @@ def get_all_hotels( db: Session = Depends(get_db)):
 @router.get("/popular/{city_id}")
 def get_popular_destination_by_cityID(city_id: int, db: Session = Depends(get_db)):
     return destination.get_popular_destinations_by_city_ID(city_id=city_id, db=db)
-    
+
 @router.get("/")
 def get_destination(
     id: int = None,
@@ -61,60 +61,37 @@ def get_destination(
     get_rating: bool = False,
     db: Session = Depends(get_db)
 ):
+    results = []
+
+    # Nếu có id, lấy destination theo ID
     if id:
-        # Lấy destination theo ID
         dest = destination.get_by_id(id, db)
-        
-        
+        if not dest:
+            return {"error": "Destination not found"}
+        results.append(dest)
+
+    # Nếu có city_id, lấy destinations theo city_id
+    elif city_id:
+        results = destination.get_by_city_id(city_id, db)
+
+    # Nếu không có id hay city_id, lấy tất cả destinations
+    else:
+        results = destination.get_all(db)
+
+    # Nếu cần sắp xếp theo đánh giá
+    if sort_by_reviews:
+        results = destination.sorting_by_ratings_and_quantity_of_reviews(destinations=results, db=db)
+
+    # Chuyển đổi các kết quả sang định dạng mong muốn
+    final_results = []
+    for dest in results:
+        result = schemas.ShowDestination.from_orm(dest).dict()
         if get_rating:
             rating_info = destination.get_ratings_and_reviews_number_of_destinationID(dest.id, db)
-            result = schemas.ShowDestination.from_orm(dest).dict()
             result.update({
                 "rating": rating_info["ratings"],
                 "numOfReviews": rating_info["numberOfReviews"]
             })
-            return result
-        
-        return schemas.ShowDestination.from_orm(dest)
-    
-    if city_id:
-        destinations = destination.get_by_city_id(city_id, db)
-        results = [schemas.ShowDestination.from_orm(dest).dict() for dest in destinations]
-        
-        # Nếu get_rating=True, thêm thông tin rating và số lượng reviews
-        if get_rating:
-            for result in results:
-                rating_info = destination.get_ratings_and_reviews_number_of_destinationID(result["id"], db)
-                result.update({
-                    "rating": rating_info["ratings"],
-                    "numOfReviews": rating_info["numberOfReviews"]
-                })
-        return results
-    
-    if sort_by_reviews:
-        destinations = destination.sorting_by_ratings_and_quantity_of_reviews(destinations=destinations, db=db)
-        results = [schemas.ShowDestination.from_orm(dest).dict() for dest in destinations]
-        
-        # Nếu get_rating=True, thêm thông tin rating và số lượng reviews
-        if get_rating:
-            for result in results:
-                rating_info = destination.get_ratings_and_reviews_number_of_destinationID(result["id"], db)
-                result.update({
-                    "rating": rating_info["ratings"],
-                    "numOfReviews": rating_info["numberOfReviews"]
-                })
-        return results
-    
-    # Nếu không có tham số nào, trả về tất cả các destination
-    destinations = destination.get_all(db)
-    results = [schemas.ShowDestination.from_orm(dest).dict() for dest in destinations]
-    
-    # Nếu get_rating=True, thêm thông tin rating và số lượng reviews
-    if get_rating:
-        for result in results:
-            rating_info = destination.get_ratings_and_reviews_number_of_destinationID(result["id"], db)
-            result.update({
-                "rating": rating_info["ratings"],
-                "numOfReviews": rating_info["numberOfReviews"]
-            })
-    return results
+        final_results.append(result)
+
+    return final_results
