@@ -1,5 +1,5 @@
 from typing import List
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Body, HTTPException, Path, Query
 from .. import database, schemas, models
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, status
@@ -25,10 +25,18 @@ def create_destination(request: schemas.Destination_Address, db: Session = Depen
 def create_destination_by_cityID(request: schemas.Hotel, destination_id: int, db: Session = Depends(get_db)):
     return destination.create_hotel_info_by_destinationID(request=request, destination_id=destination_id, db=db)
 
-@router.post("/restaurant/{destination_id}", response_model=schemas.ShowRestaurant)
-def create_destination_by_cityID(request: schemas.Restaurant, destination_id: int, db: Session = Depends(get_db)):
-    return destination.create_restaurant_info_by_destinationID(request=request, destination_id=destination_id, db=db)
 
+@router.post("/restaurant/{destination_id}", 
+             response_model=schemas.ShowRestaurant, 
+             summary="Tạo nhà hàng mới",
+             description="Tạo một nhà hàng mới cho một điểm đến cụ thể dựa trên destination_id.",
+             response_description="Thông tin về nhà hàng vừa được tạo.")
+def create_destination_by_cityID(
+    request: schemas.Restaurant = Body(..., description="Thông tin nhà hàng cần tạo."),
+    destination_id: int = Path(..., description="ID của điểm đến mà nhà hàng sẽ được gán vào."),
+    db: Session = Depends(get_db)
+):
+    return destination.create_restaurant_info_by_destinationID(request=request, destination_id=destination_id, db=db)
 @router.put("/{id}", response_model=schemas.ShowDestination)
 def update_destination_by_id(id: int, request: schemas.Destination, db: Session = Depends(get_db)):
     return destination.update_by_id(id, request, db)
@@ -46,8 +54,14 @@ def get_hotel_info_by_id(hotel_id: int, db: Session = Depends(get_db)):
     return destination.get_hotel_info( hotel_id=hotel_id, db=db)
 
 @router.get("/hotels/")
-def get_all_hotels( db: Session = Depends(get_db)):
-    return destination.get_all_hotel(db=db)
+def get_all_hotels( 
+    db: Session = Depends(get_db),
+    price_range: list[int] = Query(default=[], alias='price_range'),
+    amenities: list[str] = Query(default=[], alias='amenities'),
+    hotel_star: list[int] = Query(default=[], alias='hotel_star')
+):
+        
+    return destination.filter_hotel(db, price_range=price_range, amenities=amenities, hotel_star=hotel_star) 
 
 @router.get("/popular/{city_id}")
 def get_popular_destination_by_cityID(city_id: int, db: Session = Depends(get_db)):
@@ -66,6 +80,7 @@ def get_destination(
     # Nếu có id, lấy destination theo ID
     if id:
         dest = destination.get_by_id(id, db)
+        print(dict(dest))
         if not dest:
             return {"error": "Destination not found"}
         results.append(dest)

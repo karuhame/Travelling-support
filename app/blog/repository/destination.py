@@ -44,28 +44,29 @@ def create(request: schemas.Destination_Address, db: Session):
 def get_by_id(id: int, db: Session):
     try:
         destination = db.query(models.Destination).filter(models.Destination.id == id).first()
-        if not destination:
-            return {"detail": "Không tìm thấy điểm đến."}
+        # if not destination:
+        #     return {"detail": "Không tìm thấy điểm đến."}
 
-        # Chuyển đổi hình ảnh thành ShowImage
-        images = [schemas.ShowImage.from_orm(img) for img in destination.images] if destination.images else None
+        # # Chuyển đổi hình ảnh thành ShowImage
+        # images = [schemas.ShowImage.from_orm(img) for img in destination.images] if destination.images else None
 
-        # Tạo từ điển cho dữ liệu điểm đến
-        destination_data = {
-            "id": destination.id,
-            "name": destination.name,
-            "address": destination.address,
-            "price_bottom": destination.price_bottom,
-            "price_top": destination.price_top,
-            "date_create": destination.date_create,
-            "age": destination.age,
-            "opentime": destination.opentime,
-            "duration": destination.duration,
-            "images": images
-        }
+        # # Tạo từ điển cho dữ liệu điểm đến
+        # destination_data = {
+        #     "id": destination.id,
+        #     "name": destination.name,
+        #     "address": destination.address,
+        #     "price_bottom": destination.price_bottom,
+        #     "price_top": destination.price_top,
+        #     "date_create": destination.date_create,
+        #     "age": destination.age,
+        #     "opentime": destination.opentime,
+        #     "duration": destination.duration,
+        #     "images": images
+        # }
 
-        # Trả về ShowDestination đã được xác thực
-        return schemas.ShowDestination(**destination_data)
+        # # Trả về ShowDestination đã được xác thực
+        # return schemas.ShowDestination(**destination_data)
+        return destination
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=f"Error retrieving destination: {str(e)}")
@@ -257,6 +258,7 @@ def get_ratings_and_reviews_number_of_destinationID(destination_id: int, db: Ses
             "ratings": 0,
             "numberOfReviews": 0
         }
+        
 def get_hotel_info(hotel_id: int, db: Session):
     # Truy vấn để lấy thông tin khách sạn
     hotel = db.query(models.Hotel).filter(models.Hotel.id == hotel_id).first()
@@ -304,49 +306,6 @@ def get_hotel_info(hotel_id: int, db: Session):
 
     return hotel_info
 
-def get_all_hotel(db: Session):
-    # Truy vấn để lấy tất cả khách sạn
-    hotels = db.query(models.Hotel).all()
-    
-    hotel_list = []
-
-    for hotel in hotels:
-        # Lấy thông tin điểm đến liên quan
-        destination = db.query(models.Destination).filter(models.Destination.hotel_id == hotel.id).first()
-        
-        # Lấy thông tin đánh giá liên quan
-        reviews = db.query(models.Review).filter(models.Review.destination_id == destination.id).all()
-
-        # Tính toán số lượng đánh giá và tổng điểm
-        num_of_reviews = len(reviews)
-        total_rating = sum(review.rating for review in reviews) if num_of_reviews > 0 else 0
-        average_rating = total_rating // num_of_reviews if num_of_reviews > 0 else 0
-        
-        # Lấy thông tin địa chỉ từ điểm đến
-        address_string = (
-            f"{destination.address.district}, {destination.address.street}, {destination.address.ward}"
-            if destination and destination.address else "No address available"
-        )
-
-        # Lấy tất cả URL hình ảnh liên quan đến khách sạn
-        images = db.query(models.Image).filter(models.Image.destination_id == destination.id).all() if destination else []
-        img_urls = [image.url for image in images]
-
-        # Tạo từ điển với thông tin khách sạn
-        hotel_info = {
-            "id": hotel.id,
-            "name": destination.name if destination else "Unnamed Destination",
-            "address": address_string,
-            "rating": average_rating,
-            "numOfReviews": num_of_reviews,
-            "features": hotel.room_features.split(",") if hotel.room_features else [],
-            "imgURL": img_urls[0] if img_urls else None  # Lấy URL đầu tiên nếu có
-        }
-
-        hotel_list.append(hotel_info)
-
-    return hotel_list
-
 def get_popular_destinations_by_city_ID(city_id: int, db: Session):
     # Truy vấn để lấy danh sách các điểm đến phổ biến
     popular_destinations = (
@@ -390,3 +349,125 @@ def get_popular_destinations_by_city_ID(city_id: int, db: Session):
         destination_list.append(destination_info)
 
     return destination_list
+
+def get_all_hotel(db: Session):
+    # Truy vấn để lấy tất cả khách sạn
+    hotels = db.query(models.Hotel).all()
+    
+    hotel_list = []
+
+    for hotel in hotels:
+        # Lấy thông tin điểm đến liên quan
+        destination = db.query(models.Destination).filter(models.Destination.hotel_id == hotel.id).first()
+        
+        # Lấy thông tin đánh giá liên quan
+        reviews = db.query(models.Review).filter(models.Review.destination_id == destination.id).all()
+
+        # Tính toán số lượng đánh giá và tổng điểm
+        num_of_reviews = len(reviews)
+        total_rating = sum(review.rating for review in reviews) if num_of_reviews > 0 else 0
+        average_rating = total_rating // num_of_reviews if num_of_reviews > 0 else 0
+        
+        # Lấy thông tin địa chỉ từ điểm đến
+        address_string = (
+            f"{destination.address.district}, {destination.address.street}, {destination.address.ward}"
+            if destination and destination.address else "No address available"
+        )
+
+        # Lấy tất cả URL hình ảnh liên quan đến khách sạn
+        images = db.query(models.Image).filter(models.Image.destination_id == destination.id).all() if destination else []
+        img_urls = [image.url for image in images]
+
+        # Tạo từ điển với thông tin khách sạn
+        hotel_info = {
+            "id": hotel.id,
+            "name": destination.name if destination else "Unnamed Destination",
+            "address": address_string,
+            "rating": average_rating,
+            "numOfReviews": num_of_reviews,
+            "features": hotel.room_features.split(",") if hotel.room_features else [],
+            "imgURL": img_urls[0] if img_urls else None  # Lấy URL đầu tiên nếu có
+        }
+
+        hotel_list.append(hotel_info)
+
+    return hotel_list
+
+
+def filter_hotel(db: Session, price_range = [str], amenities = [str], hotel_star = [int]):
+    hotels = db.query(models.Hotel).all()
+    # Chuyển đổi hotel_star thành danh sách số nguyên nếu cần
+    hotel_star = [int(star) for star in hotel_star]
+    # Lọc khách sạn theo các tiêu chí
+    filtered_hotels = []
+
+    for hotel in hotels:
+        # Kiểm tra điều kiện cho amenities
+        if amenities:
+            amenities_list = [amenity.strip().lower() for amenity in hotel.property_amenities.split(',')]
+            if not all(amenity.lower() in amenities_list for amenity in amenities):
+                continue  # Nếu không có tất cả amenities yêu cầu, bỏ qua khách sạn này
+
+        # Kiểm tra điều kiện cho hotel_class
+        if hotel_star and hotel.hotel_class  not in hotel_star:
+            continue  # Nếu lớp khách sạn không nằm trong danh sách yêu cầu, bỏ qua
+        
+        # Kiểm tra điều kiện cho price_range
+        if price_range:
+            price_top = hotel.destination.price_top  # Giả sử bạn có thuộc tính này trong mô hình
+            price_category = ""
+
+            if price_top > 3000000:
+                price_category = "high"
+            elif price_top > 1000000:
+                price_category = "middle"
+            else:
+                price_category = "low"
+
+            if price_category not in price_range:
+                continue  # Nếu không nằm trong danh sách price_range, bỏ qua khách sạn
+
+        # Thêm khách sạn vào danh sách đã lọc
+        filtered_hotels.append(hotel)
+
+    return filtered_hotels
+
+
+
+def filter_restaurant(db: Session, price_range = [str], amenities = [str], restaurant_star = [int]):
+    restaurants = db.query(models.Restaurant).all()
+    # Chuyển đổi restaurant_star thành danh sách số nguyên nếu cần
+    restaurant_star = [int(star) for star in restaurant_star]
+    # Lọc khách sạn theo các tiêu chí
+    filtered_restaurants = []
+
+    for restaurant in restaurants:
+        # Kiểm tra điều kiện cho amenities
+        if amenities:
+            amenities_list = [amenity.strip().lower() for amenity in restaurant.property_amenities.split(',')]
+            if not all(amenity.lower() in amenities_list for amenity in amenities):
+                continue  # Nếu không có tất cả amenities yêu cầu, bỏ qua khách sạn này
+
+        # Kiểm tra điều kiện cho restaurant_class
+        if restaurant_star and restaurant.restaurant_class  not in restaurant_star:
+            continue  # Nếu lớp khách sạn không nằm trong danh sách yêu cầu, bỏ qua
+        
+        # Kiểm tra điều kiện cho price_range
+        if price_range:
+            price_top = restaurant.destination.price_top  # Giả sử bạn có thuộc tính này trong mô hình
+            price_category = ""
+
+            if price_top > 3000000:
+                price_category = "high"
+            elif price_top > 1000000:
+                price_category = "middle"
+            else:
+                price_category = "low"
+
+            if price_category not in price_range:
+                continue  # Nếu không nằm trong danh sách price_range, bỏ qua khách sạn
+
+        # Thêm khách sạn vào danh sách đã lọc
+        filtered_restaurants.append(restaurant)
+
+    return filtered_restaurants

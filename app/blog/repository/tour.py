@@ -47,6 +47,8 @@ def get_tour_by_id(tour_id: int, db: Session):
         "description": tour.description,
         "user_id": tour.user_id,
         "destinations": [destination.id for destination in tour.destinations],  # Lấy danh sách ID của các destination
+        "images": [destination.images[0].url if destination.images else None for destination in tour.destinations],
+
     }
 
     return tour_info
