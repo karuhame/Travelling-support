@@ -50,7 +50,6 @@ def get_all_restaurants(
     db: Session = Depends(get_db),
     cuisines: list[int] = Query(default=[], alias='cuisines'),
 ):
-        
     return destination.filter_restaurant(db, cuisines=cuisines) 
 
 @router.put("/hotel/{hotel_id}", response_model=schemas.ShowHotel)

@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from fastapi import HTTPException, status
+from fastapi import HTTPException, UploadFile, status
 from blog.hashing import Hash
 
 
@@ -163,8 +163,14 @@ class ImageHandler:
 
         print(f"Resized and saved {img_name}")
 
-
-
+    @staticmethod
+    def save_image(image: UploadFile, file_location) -> str:
+        # Tạo thư mục nếu chưa tồn tại
+        os.makedirs(os.path.dirname(file_location), exist_ok=True)
+        
+        with open(file_location, "wb") as file:
+            file.write(image.file.read())
+        return file_location  # Trả về đường dẫn tệp hoặc URL
     def close(self):
         """Đóng trình duyệt Selenium."""
         self.driver.quit()

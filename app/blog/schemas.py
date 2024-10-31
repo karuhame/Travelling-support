@@ -15,7 +15,6 @@ class UserInfoBase(BaseModel):
     
     
 class Tour(BaseModel):
-    id: int
     name: str
     description: str
     user_id: int
