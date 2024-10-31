@@ -24,6 +24,8 @@ def login(request: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(
 
 @router.get('/current-user')
 def read_users_me(
-    current_user: Annotated[schemas.User, Depends(oauth2.get_current_user)],
+    current_user: Annotated[schemas.User, Depends(oauth2.get_current_user)], db: Session = Depends(database.get_db),
 ):
-    return current_user
+    user = db.query(models.User).filter(
+        models.User.email == current_user.email).first()
+    return schemas.ShowUser.from_orm(user).dict()
