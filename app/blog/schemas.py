@@ -121,6 +121,7 @@ class Destination(BaseModel):
     age : int  
     opentime : time
     duration : int 
+    description: Optional[str] = None
     
     class Config():
         from_attributes = True
