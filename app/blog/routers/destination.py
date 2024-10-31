@@ -45,6 +45,14 @@ def update_destination_by_id(id: int, request: schemas.Destination, db: Session 
 def update_restaurant_info_by_id(request: schemas.Restaurant, restaurant_id: int, db: Session = Depends(get_db)):
     return destination.update_restaurant_info_by_id(request=request, id=restaurant_id, db=db)
 
+@router.get("/restaurants/")
+def get_all_restaurants( 
+    db: Session = Depends(get_db),
+    cuisines: list[int] = Query(default=[], alias='cuisines'),
+):
+        
+    return destination.filter_restaurant(db, cuisines=cuisines) 
+
 @router.put("/hotel/{hotel_id}", response_model=schemas.ShowHotel)
 def update_hotel_info_by_id(request: schemas.Hotel, hotel_id: int, db: Session = Depends(get_db)):
     return destination.update_hotel_info_by_id(request=request, id=hotel_id, db=db)
