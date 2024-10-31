@@ -87,7 +87,6 @@ def get_destination(
     # Nếu có id, lấy destination theo ID
     if id:
         dest = destination.get_by_id(id, db)
-        print(dict(dest))
         if not dest:
             return {"error": "Destination not found"}
         results.append(dest)
