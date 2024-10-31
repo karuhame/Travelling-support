@@ -21,40 +21,9 @@ def create_tour(
     
     return tour.create(request=tour_data, db=db)
 
-@router.post("/img")
-def create_tour(
-    name: str,
-    description: str,
-    user_id: int,
-    city_id: int,
-    destination_ids: list[int] = Query(default=[], alias='destination_ids'),
-    images: List[UploadFile] = File(...),  # Nhận danh sách các tệp ảnh
-    db: Session = Depends(get_db)
-):
-    image_handler = image.ImageHandler()
-    urls = [image_handler.save_image(image, f"travel-image/tours/1.png") for image in images]
-    print(urls)
-    # # Tạo tour với thông tin và ảnh đã xử lý
-    # return tour.create(
-    #     request={
-    #         "name": name,
-    #         "description": description,
-    #         "user_id": user_id,
-    #         "city_id": city_id,
-    #         "destination_ids": destination_ids
-    #     },
-    #     images=image_urls,
-    #     db=db
-    # )
-
-@router.get("//{tour_id}")
+@router.get("/{tour_id}")
 def get_tour_by_id_endpoint(tour_id: int, db: Session = Depends(get_db)):
     return tour.get_tour_by_id(tour_id=tour_id, db=db)
-
-@router.get("/")
-def get_all_tour_endpoint(db: Session = Depends(get_db)):
-    return tour.get_all_tour(db = db)
-
 
 @router.get("/")
 def get_all_tour_endpoint(

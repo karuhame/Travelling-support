@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session
 from blog import models, schemas
-from fastapi import HTTPException, status
+from fastapi import HTTPException, UploadFile, status
 from blog.hashing import Hash
-
+from blog.repository.image import ImageHandler
 def create_by_userId_destinationId(user_id: int, destination_id: int,  request: schemas.Review, db: Session):
     try:
         new_review = models.Review(
@@ -83,3 +83,38 @@ def delete_by_id(id: int, db: Session):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=f"Error deleting review: {str(e)}")
+
+def add_image_to_review(db: Session, images: list[UploadFile], review_id: int):
+    local_filenames = []
+    imageHandler = ImageHandler()
+
+    for image in images:
+
+        img_file_name = ImageHandler.save_image(image=image, file_location=f"travel-image/reviews/{review_id}.png")
+        print(img_file_name)
+        try:
+            # Tạo đối tượng Image mới
+            img = models.Image(
+                review_id=review_id
+            )
+            db.add(img)  # Thêm vào session
+            db.commit()  # Lưu lại để lấy id của image                        
+            db.refresh(img)  # Làm mới đối tượng để lấy id
+
+            # Tải lên hình ảnh lên Azure
+            blob_name = f"reviews/{review_id}/{img.id}.png"  # Tên blob
+            imageHandler.upload_to_azure(img_file_name, blob_name)  # Tải lên Azure
+
+            # Lấy URL hình ảnh từ Azure
+            url = imageHandler.get_image_url(blob_name_prefix=f"reviews/{review_id}", img_file_name=f"{img.id}.png")
+            
+            # Gán URL cho đối tượng hình ảnh
+            img.url = url
+            db.add(img)  # Thêm lại vào session
+            db.commit()  # Lưu lại
+            db.refresh(img)  # Làm mới đối tượng
+                
+        except Exception as e:
+            print(f"Could not process image {img_file_name}: {e}")
+    
+    return {"status": "success", "review_id": review_id}

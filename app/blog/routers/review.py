@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException
+from datetime import date
+from fastapi import APIRouter, HTTPException, UploadFile
 from .. import database, schemas, models
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, status
@@ -13,11 +14,30 @@ router = APIRouter(
 
 get_db = database.get_db
 
+@router.post("/img/")
+def addImagetoReview(images: list[UploadFile], review_id: int, db: Session = Depends(get_db)):
+    return review.add_image_to_review(db, images=images,review_id=review_id)
 
-@router.post("/", response_model=schemas.ShowReview)
-def create_by_userId_destinationId(request: schemas.Review, user_id: int, destination_id: int, db: Session = Depends(get_db)):
-    return review.create_by_cityID(user_id, destination_id, request, db)
 
+@router.post("/")
+def create_by_userId_destinationId(
+    images: list[UploadFile],
+    title :str,
+    content :str, 
+    rating : float, 
+    user_id: int,
+    destination_id: int, 
+    date_create: date = date.today(),
+    db: Session = Depends(get_db)):
+    
+    sh_review= schemas.Review(
+        title = title,
+        content = content,
+        rating = rating,
+        date_create = date_create,
+        )
+    new_review = review.create_by_userId_destinationId(user_id, destination_id, sh_review, db)    
+    return review.add_image_to_review(db, images=images, review_id=new_review.id)
 # @router.get("/{id}", response_model=schemas.ShowReview)
 # def get_review_by_id(id: int, db: Session = Depends(get_db)):
 #     return review.get_by_id(id, db)
@@ -59,3 +79,4 @@ def get_reviews(
         return [schemas.ShowReview.from_orm(rv).dict() for rv in reviews]
 
     raise HTTPException(status_code=400, detail="You must provide either review_id, destination_id, or both user_id and destination_id.")
+
