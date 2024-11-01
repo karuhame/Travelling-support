@@ -486,3 +486,11 @@ def add_images_to_destination(db: Session, images: list[UploadFile], destination
             print(f"Could not process image {img_file_name}: {e}")
     
     return {"status": "success", "destination_id": destination_id}
+
+def get_destination_info(db:Session, restaurant_id: int):
+    try:
+        restaurant = db.query(models.Restaurant).filter(models.Restaurant.id == restaurant_id).first()
+        return restaurant
+    except Exception as e:
+        print(f"Error detail: {e}")
+    

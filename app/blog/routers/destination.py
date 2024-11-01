@@ -77,6 +77,11 @@ def get_all_restaurants(
 ):
     return destination.filter_restaurant(db, cuisines=cuisines) 
 
+@router.get("/restaurant/{restaurant_id}")
+def get_restaurant_info_by_id(restaurant_id: int, db: Session = Depends(get_db)):
+    return destination.get_destination_info( restaurant_id=restaurant_id, db=db)
+
+
 @router.put("/hotel/{hotel_id}", response_model=schemas.ShowHotel)
 def update_hotel_info_by_id(request: schemas.Hotel, hotel_id: int, db: Session = Depends(get_db)):
     return destination.update_hotel_info_by_id(request=request, id=hotel_id, db=db)
