@@ -23,7 +23,6 @@ def get_city_by_id(id: int, db: Session):
     try:
         
         city = db.query(models.City).filter(models.City.id == id).first()  # Chờ truy vấn
-        print(city)
         
         if not city:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,

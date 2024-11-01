@@ -53,6 +53,30 @@ def get_tour_by_id(tour_id: int, db: Session):
 
     return tour_info
 
+
+
+def get_ratings_and_reviews_number_of_tourID(tour_id: int, db: Session):
+    reviews = db.query(models.Review).filter(models.Review.tour_id == tour_id).all()
+    if reviews:
+        # Tính tổng số điểm và số lượng đánh giá
+        total_ratings = sum(review.rating for review in reviews)
+        quantity_of_reviews = len(reviews)
+        average_rating = total_ratings / quantity_of_reviews
+
+        # Tính điểm theo công thức
+        point = (average_rating * 10)
+
+        return {
+            "ratings": average_rating,
+            "numberOfReviews": quantity_of_reviews
+        }
+    else:
+        return {
+            "ratings": 0,
+            "numberOfReviews": 0
+        }
+        
+
 def get_all_tour(db: Session):
     # Truy vấn để lấy tất cả các tour
     tours = db.query(models.Tour).all()

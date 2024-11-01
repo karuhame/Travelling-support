@@ -16,7 +16,7 @@ get_db = database.get_db
 
 @router.post("/img/")
 def addImagetoReview(images: list[UploadFile], review_id: int, db: Session = Depends(get_db)):
-    return review.add_image_to_review(db, images=images,review_id=review_id)
+    return review.add_images_to_review(db, images=images,review_id=review_id)
 
 
 @router.post("/")
@@ -37,7 +37,7 @@ def create_by_userId_destinationId(
         date_create = date_create,
         )
     new_review = review.create_by_userId_destinationId(user_id, destination_id, sh_review, db)    
-    return review.add_image_to_review(db, images=images, review_id=new_review.id)
+    return review.add_images_to_review(db, images=images, review_id=new_review.id)
 # @router.get("/{id}", response_model=schemas.ShowReview)
 # def get_review_by_id(id: int, db: Session = Depends(get_db)):
 #     return review.get_by_id(id, db)

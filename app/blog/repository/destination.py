@@ -2,8 +2,9 @@ from typing import List
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from blog import models, schemas
-from fastapi import HTTPException, status
+from fastapi import HTTPException, UploadFile, status
 from blog.hashing import Hash
+from blog.repository.image import ImageHandler
 
 def create(request: schemas.Destination_Address, db: Session):
     try:
@@ -434,40 +435,54 @@ def filter_hotel(db: Session, price_range = [str], amenities = [str], hotel_star
 
 
 
-def filter_restaurant(db: Session, price_range = [str], amenities = [str], restaurant_star = [int]):
+def filter_restaurant(db: Session, cuisines = [str], features = [str], good_for = [str], other = [str]):
     restaurants = db.query(models.Restaurant).all()
-    # Chuyển đổi restaurant_star thành danh sách số nguyên nếu cần
-    restaurant_star = [int(star) for star in restaurant_star]
+
     # Lọc khách sạn theo các tiêu chí
     filtered_restaurants = []
 
     for restaurant in restaurants:
         # Kiểm tra điều kiện cho amenities
-        if amenities:
-            amenities_list = [amenity.strip().lower() for amenity in restaurant.property_amenities.split(',')]
-            if not all(amenity.lower() in amenities_list for amenity in amenities):
-                continue  # Nếu không có tất cả amenities yêu cầu, bỏ qua khách sạn này
-
-        # Kiểm tra điều kiện cho restaurant_class
-        if restaurant_star and restaurant.restaurant_class  not in restaurant_star:
-            continue  # Nếu lớp khách sạn không nằm trong danh sách yêu cầu, bỏ qua
-        
-        # Kiểm tra điều kiện cho price_range
-        if price_range:
-            price_top = restaurant.destination.price_top  # Giả sử bạn có thuộc tính này trong mô hình
-            price_category = ""
-
-            if price_top > 3000000:
-                price_category = "high"
-            elif price_top > 1000000:
-                price_category = "middle"
-            else:
-                price_category = "low"
-
-            if price_category not in price_range:
-                continue  # Nếu không nằm trong danh sách price_range, bỏ qua khách sạn
-
-        # Thêm khách sạn vào danh sách đã lọc
+        if cuisines:
+            cuisines_list = [cuisin.strip().lower() for cuisin in restaurant.cuisine.split(',')]
+            if not all(cuisin.lower() in cuisines_list for cuisin in cuisines):
+                continue 
         filtered_restaurants.append(restaurant)
-
     return filtered_restaurants
+
+
+
+def add_images_to_destination(db: Session, images: list[UploadFile], destination_id: int):
+    local_filenames = []
+    imageHandler = ImageHandler()
+
+    for image in images:
+
+        img_file_name = ImageHandler.save_image(image=image, file_location=f"travel-image/destinations/{destination_id}.png")
+        print(img_file_name)
+        try:
+            # Tạo đối tượng Image mới
+            img = models.Image(
+                destination_id=destination_id
+            )
+            db.add(img)  # Thêm vào session
+            db.commit()  # Lưu lại để lấy id của image                        
+            db.refresh(img)  # Làm mới đối tượng để lấy id
+
+            # Tải lên hình ảnh lên Azure
+            blob_name = f"destinations/{destination_id}/{img.id}.png"  # Tên blob
+            imageHandler.upload_to_azure(img_file_name, blob_name)  # Tải lên Azure
+
+            # Lấy URL hình ảnh từ Azure
+            url = imageHandler.get_image_url(blob_name_prefix=f"destinations/{destination_id}", img_file_name=f"{img.id}.png")
+            
+            # Gán URL cho đối tượng hình ảnh
+            img.url = url
+            db.add(img)  # Thêm lại vào session
+            db.commit()  # Lưu lại
+            db.refresh(img)  # Làm mới đối tượng
+                
+        except Exception as e:
+            print(f"Could not process image {img_file_name}: {e}")
+    
+    return {"status": "success", "destination_id": destination_id}

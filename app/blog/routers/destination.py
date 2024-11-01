@@ -1,5 +1,6 @@
-from typing import List
-from fastapi import APIRouter, Body, HTTPException, Path, Query
+from datetime import date, time
+from typing import List, Optional
+from fastapi import APIRouter, Body, HTTPException, Path, Query, UploadFile
 from .. import database, schemas, models
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, status
@@ -17,10 +18,34 @@ get_db = database.get_db
 def delete_destination_by_id(id: int, db: Session = Depends(get_db)):
     return destination.delete_by_id(id, db)
 
-@router.post("/", response_model=schemas.ShowDestination)
-def create_destination(request: schemas.Destination_Address, db: Session = Depends(get_db)):
-    return destination.create(request, db)
+@router.post("/")
+def create_destination(
+    images: List[UploadFile],
+    name: str,
+    price_bottom: int,
+    price_top: int,
+    age: int,
+    opentime: time,
+    duration: int,
+    date_create: date = date.today(),
+    address: Optional[schemas.ShowAddress] = None,
+    description: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    sh_destination = schemas.Destination(
+        name=name,
+        address=address,
+        price_bottom=price_bottom,
+        price_top=price_top,
+        date_create=date_create,
+        age=age,
+        opentime=opentime,
+        duration=duration,
+        description=description
+    )
 
+    new_dest = destination.create(sh_destination, db)
+    return destination.add_images_to_review(db, images=images, destination_id=new_dest.id)
 @router.post("/hotel/{destination_id}", response_model=schemas.ShowHotel)
 def create_destination_by_cityID(request: schemas.Hotel, destination_id: int, db: Session = Depends(get_db)):
     return destination.create_hotel_info_by_destinationID(request=request, destination_id=destination_id, db=db)
@@ -48,7 +73,7 @@ def update_restaurant_info_by_id(request: schemas.Restaurant, restaurant_id: int
 @router.get("/restaurants/")
 def get_all_restaurants( 
     db: Session = Depends(get_db),
-    cuisines: list[int] = Query(default=[], alias='cuisines'),
+    cuisines: list[str] = Query(default=[], alias='cuisines'),
 ):
     return destination.filter_restaurant(db, cuisines=cuisines) 
 

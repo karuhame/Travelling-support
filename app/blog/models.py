@@ -154,6 +154,7 @@ class Restaurant(Base):
     cuisine = Column(String(50), default='Mixed')
     special_diet = Column(String(50), nullable=True)
     
+    
     # destination_id = Column(Integer, ForeignKey('destination.id', name="fk_hotel_destination", ondelete='CASCADE'), nullable=True)
 
     destination = relationship("Destination", back_populates="restaurant")

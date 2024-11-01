@@ -84,7 +84,7 @@ def delete_by_id(id: int, db: Session):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=f"Error deleting review: {str(e)}")
 
-def add_image_to_review(db: Session, images: list[UploadFile], review_id: int):
+def add_images_to_review(db: Session, images: list[UploadFile], review_id: int):
     local_filenames = []
     imageHandler = ImageHandler()
 
