@@ -1,4 +1,5 @@
 from typing import List, Optional
+from fastapi import UploadFile
 from pydantic import BaseModel
 from datetime import date, time
 class BlogBase(BaseModel):
@@ -10,7 +11,7 @@ class Blog(BlogBase):
     class Config():
         from_attributes = True
 class UserInfoBase(BaseModel):
-    business_description: str# Thông tin mô tả doanh nghiệp
+    description: str# Thông tin mô tả doanh nghiệp
     phone_number: str
     
     
@@ -28,9 +29,6 @@ class User(BaseModel):
     password:str
     role: str
 
-class ShowUserInfo(BaseModel):
-    business_description: Optional[str]  # Thông tin mô tả doanh nghiệp
-    phone_number: Optional[str]  
     class Config:
         from_attributes = True
 class ShowUser(BaseModel):
@@ -85,9 +83,7 @@ class ShowImage(BaseModel):
     url: str
     
     class Config():
-            from_attributes = True
-
-
+        from_attributes = True
 class City(BaseModel):
     name: str
     description: str
@@ -178,3 +174,13 @@ class ShowReview(Review):
     class Config():
         from_attributes = True
    
+class ShowUserInfo(BaseModel):
+    id: int
+    description: Optional[str]  # Thông tin mô tả doanh nghiệp
+    phone_number: Optional[str]  
+    image: Optional[ShowImage]
+    address : Optional[ShowAddress]
+
+    
+    class Config():
+        from_attributes = True

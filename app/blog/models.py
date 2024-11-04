@@ -27,14 +27,17 @@ class UserInfo(Base):
     __tablename__ = 'userInfo'
 
     id = Column(Integer, primary_key=True, index=True)
-    business_description = Column(String(200), default='No Description')
+    description = Column(String(200), default='No Description')
     phone_number = Column(String(12), default='N/A')
     
     # Foreign Key
     user_id = Column(Integer, ForeignKey('user.id', ondelete='CASCADE'))
-
+    address_id = Column(Integer, ForeignKey('address.id', ondelete='CASCADE'))
+    
     # Relationship
     user = relationship("User", back_populates="user_info")
+    address = relationship("Address", back_populates="user_info")
+    image = relationship("Image", back_populates="user_info",uselist=False)
 
 class BusinessType(Base):
     __tablename__ = 'businessType'
@@ -97,6 +100,10 @@ class Image(Base):
     
     review_id = Column(Integer, ForeignKey('review.id'), nullable=True)
     review = relationship("Review", back_populates="images", uselist=False)
+    
+    userInfo_id = Column(Integer, ForeignKey('userInfo.id'), nullable=True)
+    user_info = relationship("UserInfo", back_populates="image", uselist=False)
+    
 class City(Base):
     __tablename__ = 'city'
     
@@ -126,7 +133,7 @@ class Address(Base):
     
     city = relationship("City", back_populates="addresses", uselist=False)
     destination = relationship("Destination", back_populates="address", uselist=False)
-
+    user_info = relationship("UserInfo", back_populates="address", uselist=False)
     
 class Hotel(Base):
     __tablename__ = 'hotel'

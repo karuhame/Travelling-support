@@ -1,6 +1,5 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, UploadFile, status
-from blog.hashing import Hash
 
 
 import base64
@@ -15,7 +14,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from bs4 import BeautifulSoup
 
-
+from blog import models
 
 import os
 from dotenv import load_dotenv
@@ -82,7 +81,7 @@ class ImageHandler:
         except Exception as e:
             print(f"Could not download image {img_url}: {e}")
     def download(self, img_urls, dir=None):
-        """Tải xuống hình ảnh từ danh sách URL."""
+        """Tải xuống hình ảnh từ danh sách URL có header là data:image"""
         downloaded_images = []
         
         # Sử dụng dir nếu được cung cấp, nếu không sử dụng root_dir
@@ -116,16 +115,30 @@ class ImageHandler:
     
     def upload_to_azure(self, img_file_name, blob_name_prefix):
         """Tải lên hình ảnh lên Azure Blob Storage."""
-        connection_string = self.connection_string
-        container_name = self.container_name
 
-        blob_service_client = BlobServiceClient.from_connection_string(connection_string)
-        container_client = blob_service_client.get_container_client(container_name)
+        blob_service_client = BlobServiceClient.from_connection_string(self.connection_string)
+        container_client = blob_service_client.get_container_client(self.container_name)
         blob_client = container_client.get_blob_client(blob_name_prefix)
         with open(img_file_name, "rb") as data:
             blob_client.upload_blob(data, overwrite=True, content_type='image/png')
             print(f"Uploaded {img_file_name} to Azure as {blob_name_prefix}")
 
+    def update_image_azure(self, img_file_name, blob_name_prefix):
+        """Cập nhật hình ảnh đã tồn tại trong Azure Blob Storage."""
+        self.upload_to_azure(img_file_name, blob_name_prefix)  # Overwrites the existing blob
+
+    def delete_image_azure(self, blob_name_prefix):
+        """Xóa hình ảnh khỏi Azure Blob Storage."""
+        blob_service_client = BlobServiceClient.from_connection_string(self.connection_string)
+        container_client = blob_service_client.get_container_client(self.container_name)
+
+        blob_client = container_client.get_blob_client(blob_name_prefix)
+        try:
+            blob_client.delete_blob()
+            print(f"Deleted {blob_name_prefix} from Azure.")
+        except Exception as e:
+            print(f"The blob {blob_name_prefix} does not exist.")
+            
     def get_image_url(self, blob_name_prefix, img_file_name):
         """Lấy URL của hình ảnh từ Azure Blob Storage."""
         account_name = self.connection_string.split(';')[1].split('=')[1]  # Lấy tên tài khoản từ chuỗi kết nối
@@ -135,33 +148,7 @@ class ImageHandler:
         url = f"https://{account_name}.blob.core.windows.net/{container_name}/{blob_name_prefix}/{img_file_name}"
         return url
 
-    def download_and_upload(self, id, img_urls, blob_name_prefix, target_size=(600, 400)):
-        """Tải xuống hình ảnh và tải lên Azure Blob Storage."""
-        downloaded_images = self.download(img_urls)
 
-        for idx, img_name in enumerate(downloaded_images):
-            try:
-                # Resize and save the image
-                # self.resize_and_save_image(img_name, target_size)
-
-                # Tải lên Azure với tên blob chỉ định
-                blob_name = f"{blob_name_prefix}/id_{idx + 1}.png"
-                self.upload_to_azure(img_name, blob_name)
-
-            except Exception as e:
-                print(f"Could not upload image {img_name}: {e}")
-
-    def resize_and_save_image(self, img_name, target_size):
-        """Thay đổi kích thước và lưu hình ảnh."""
-        with Image.open(img_name) as img:
-            img.thumbnail(target_size, Image.LANCZOS)
-            new_image = Image.new("RGB", target_size, (255, 255, 255))
-            x = (target_size[0] - img.size[0]) // 2
-            y = (target_size[1] - img.size[1]) // 2
-            new_image.paste(img, (x, y))
-            new_image.save(img_name)
-
-        print(f"Resized and saved {img_name}")
 
     @staticmethod
     def save_image(image: UploadFile, file_location) -> str:
@@ -171,21 +158,20 @@ class ImageHandler:
         with open(file_location, "wb") as file:
             file.write(image.file.read())
         return file_location  # Trả về đường dẫn tệp hoặc URL
-    def close(self):
-        """Đóng trình duyệt Selenium."""
+    def __del__(self):
+        """Giải phóng tài nguyên khi đối tượng bị hủy."""
         self.driver.quit()
 
     @staticmethod
     def crawl_image(db: Session, city = None, destination = None):
             
-        from blog import models, schemas
+        from app.blog import models
         
         google_crawler = ImageHandler()
         if city:
             obj = city
             
             download_links = google_crawler.crawl(keyword=f'Du lịch {obj.name}', max_num=3)
-            google_crawler.close()
             
             for img_link in download_links:
                 img = models.Image(
@@ -207,7 +193,6 @@ class ImageHandler:
             obj = destination
             
             download_imgs = google_crawler.crawl(keyword=f'Du lịch {obj.name}', max_num=3)
-            google_crawler.close()
             
             for img_link in download_imgs:
                 img = models.Image(
@@ -260,7 +245,7 @@ class ImageHandler:
             except Exception as e:
                 print(f"Could not process image {img_file_path}: {e}")
     def fake_db_review(self, db: Session, review=None, fake_dir ="travel-image/destinations/fake/"):
-        from blog import models
+       
         import glob
 
         # Lấy tất cả các file hình ảnh trong fake_dir
@@ -291,7 +276,10 @@ class ImageHandler:
                 db.refresh(img)  # Làm mới đối tượng
             except Exception as e:
                 print(f"Could not process image {img_file_path}: {e}")
+        
 
-    
-
-    
+if __name__ == '__main__':
+    image_handler = ImageHandler()
+    # image_handler.upload_to_azure("travel-image/cities/1/1.png", "uploaded_image.png")
+    # image_handler.update_image_azure("travel-image/cities/1/2.png", "uploaded_image.png")
+    image_handler.delete_image_azure("uploaded_image.png")

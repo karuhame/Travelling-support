@@ -76,7 +76,7 @@ def create_sample_data():
             admin1 = repository.user.create_business_admin(admin1_data, db)
 
             # Tạo thông tin người dùng liên quan đến user1 và user2
-            user1_info = models.UserInfo(business_description='Tour operator', phone_number='123456789', user=user1)
+            user1_info = models.UserInfo(description='Tour operator', phone_number='123456789', user=user1)
             admin1_info = models.UserInfo(phone_number='987654321', user=admin1)
             
             db.add_all([user1_info, admin1_info])
@@ -108,7 +108,7 @@ def create_sample_data():
                 user = repository.user.create_business_admin(user_data, db)
 
                 # Tạo thông tin người dùng
-                user_info = models.UserInfo(business_description='Business Owner', phone_number='0123456789', user=user)
+                user_info = models.UserInfo(description='Business Owner', phone_number='0123456789', user=user)
                 db.add(user_info)
 
                 # Tạo thành phố
@@ -122,7 +122,7 @@ def create_sample_data():
                 db.refresh(city)
                 
                 # crawl data cho city
-                ImageHandler.crawl_image(db=db, city= city)
+                # ImageHandler.crawl_image(db=db, city= city)
                 # image.crawl_image(db=db, city=city )
                 
                 # Thêm 1 điểm đến cho mỗi user
@@ -153,8 +153,8 @@ def create_sample_data():
                     db.commit()
                     db.refresh(destination)
                     
-                    imageHandler = ImageHandler()
-                    imageHandler.fake_db_destination(db, destination=destination)
+                    # imageHandler = ImageHandler()
+                    # imageHandler.fake_db_destination(db, destination=destination)
                     
                     hotel = models.Hotel(
                         property_amenities='Free WiFi, Pool, Gym',
@@ -189,7 +189,7 @@ def create_sample_data():
                         db.add(review)
                         db.commit()
                         db.refresh(review)
-                        imageHandler.fake_db_review(db, review=review)
+                        # imageHandler.fake_db_review(db, review=review)
                         
                     
             db.commit()
