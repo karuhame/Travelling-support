@@ -96,3 +96,20 @@ def delete(id: int, db: Session):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=f"Error deleting user: {str(e)}")
+def change_status(db: Session, user_id:int ):
+    try:
+        user = db.query(models.User).filter(models.User.id == user_id).first()  # Chờ truy vấn
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                detail=f"User with the id {id} is not available")
+
+        if user.status != "enable":
+            user.status = "enable"
+        else:
+            user.status = "disable"
+            
+        db.commit()      
+        return {"detail": "Change successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail=f"Error deleting user: {str(e)}")

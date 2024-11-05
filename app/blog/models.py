@@ -10,7 +10,7 @@ class User(Base):
     password = Column(String(255), default='password123')  
     email = Column(String(50), unique=True)
     role = Column(String(10), default="guest") #guest/business/admin
-
+    status = Column(String(10), default="enable")
     
     # Relationship
     business_type = relationship("BusinessType", back_populates="user")

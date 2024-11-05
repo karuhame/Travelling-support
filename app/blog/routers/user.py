@@ -31,3 +31,6 @@ def admin_all(db: Session = Depends(get_db), current_user: schemas.User = Depend
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You do not have permission to access this resource."
         )
+@router.post('/status_change/{user_id}')
+def change_status(user_id: int, db:Session = Depends(get_db)):
+    return user.change_status(db=db, user_id = user_id)

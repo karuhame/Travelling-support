@@ -26,26 +26,11 @@ class Tour(BaseModel):
 class User(BaseModel):
     username:str
     email:str
-    password:str
+    password:str    
     role: str
+    status: str
 
     class Config:
-        from_attributes = True
-class ShowUser(BaseModel):
-    id: int
-    username:str
-    email:str
-    role: str
-    class Config():
-        from_attributes = True
-
-class ShowBlog(BaseModel):
-    id: int
-    title: str
-    body:str
-    creator: ShowUser
-
-    class Config():
         from_attributes = True
 
 
@@ -182,5 +167,26 @@ class ShowUserInfo(BaseModel):
     address : Optional[ShowAddress]
 
     
+    class Config():
+        from_attributes = True
+
+
+class ShowUser(BaseModel):
+    id: int
+    username:str
+    email:str
+    role: str
+    status: str
+    
+    user_info: Optional[ShowUserInfo]
+    class Config():
+        from_attributes = True
+
+class ShowBlog(BaseModel):
+    id: int
+    title: str
+    body:str
+    creator: ShowUser
+
     class Config():
         from_attributes = True
