@@ -84,7 +84,7 @@ def delete_by_id(id: int, db: Session):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=f"Error deleting review: {str(e)}")
 
-def add_images_to_review(db: Session, images: list[UploadFile], review_id: int):
+async def add_images_to_review(db: Session, images: list[UploadFile], review_id: int):
     local_filenames = []
     imageHandler = ImageHandler()
 
@@ -103,7 +103,7 @@ def add_images_to_review(db: Session, images: list[UploadFile], review_id: int):
 
             # Tải lên hình ảnh lên Azure
             blob_name = f"reviews/{review_id}/{img.id}.png"  # Tên blob
-            imageHandler.upload_to_azure(img_file_name, blob_name)  # Tải lên Azure
+            await imageHandler.upload_to_azure(img_file_name, blob_name)  # Tải lên Azure
 
             # Lấy URL hình ảnh từ Azure
             url = imageHandler.get_image_url(blob_name_prefix=f"reviews/{review_id}", img_file_name=f"{img.id}.png")

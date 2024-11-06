@@ -6,7 +6,7 @@ from blog.hashing import Hash
 from blog.repository.image import ImageHandler
 
 
-def add_image_to_userInfo(db: Session, image: UploadFile, userInfo_id: int):
+async def add_image_to_userInfo(db: Session, image: UploadFile, userInfo_id: int):
     imageHandler = ImageHandler()
 
 
@@ -22,7 +22,7 @@ def add_image_to_userInfo(db: Session, image: UploadFile, userInfo_id: int):
 
         # Tải lên hình ảnh lên Azure
         blob_name = f"userInfoes/{userInfo_id}/{img.id}.png"  # Tên blob
-        imageHandler.upload_to_azure(img_file_name, blob_name)  # Tải lên Azure
+        await imageHandler.upload_to_azure(img_file_name, blob_name)  # Tải lên Azure
 
         # Lấy URL hình ảnh từ Azure
         url = imageHandler.get_image_url(blob_name_prefix=f"userInfoes/{userInfo_id}", img_file_name=f"{img.id}.png")
@@ -38,7 +38,7 @@ def add_image_to_userInfo(db: Session, image: UploadFile, userInfo_id: int):
     
     return {"status": "success", "userInfo_id": userInfo_id}
 
-def update_image(db: Session, image: UploadFile, userInfo_id: int):
+async def update_image(db: Session, image: UploadFile, userInfo_id: int):
     imageHandler = ImageHandler()
 
     # Lưu hình ảnh tạm thời
@@ -61,7 +61,7 @@ def update_image(db: Session, image: UploadFile, userInfo_id: int):
 
         # Tải lên hình ảnh lên Azure
         blob_name = f"userInfoes/{userInfo_id}/{user_info.image.id}.png"  # Tên blob
-        imageHandler.upload_to_azure(img_file_name, blob_name)  # Tải lên Azure
+        await imageHandler.upload_to_azure(img_file_name, blob_name)  # Tải lên Azure
 
         # Lấy URL hình ảnh từ Azure
         url = imageHandler.get_image_url(blob_name_prefix=f"userInfoes/{userInfo_id}", img_file_name=f"{user_info.image.id}.png")
@@ -78,7 +78,7 @@ def update_image(db: Session, image: UploadFile, userInfo_id: int):
         raise HTTPException(status_code=500, detail=f"Could not process image: {str(e)}")  # Trả về lỗi nếu có
 
     return {"status": "success", "userInfo_id": userInfo_id}
-def delete_image(db: Session, userInfo_id: int):
+async def delete_image(db: Session, userInfo_id: int):
     imageHandler = ImageHandler()
     
     try:
@@ -88,7 +88,7 @@ def delete_image(db: Session, userInfo_id: int):
             return
         # Xóa hình ảnh khỏi Azure Blob Storage
         blob_name_prefix = f"userInfoes/{userInfo_id}/{img.id}.png"
-        imageHandler.delete_image_azure(blob_name_prefix)
+        await imageHandler.delete_image_azure(blob_name_prefix)
 
         # Xóa hình ảnh khỏi cơ sở dữ liệu
         db.delete(img)
