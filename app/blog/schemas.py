@@ -2,16 +2,6 @@ from typing import List, Optional
 from fastapi import UploadFile
 from pydantic import BaseModel, Field
 from datetime import date, time
-class Test(BaseModel):
-    txt: str = Field(..., description="Tên của điểm đến.")
-    name: str = Field(...)
-    price_bottom: int = Field(...)
-    price_top: int = Field(...)
-    date_create: date = Field(date.today())
-    age: int = Field(...)
-    opentime: time = Field(...)
-    duration: int = Field(...)
-    description: Optional[str] = Field(None)
 class BlogBase(BaseModel):
     title: str
     body: str
@@ -19,7 +9,7 @@ class BlogBase(BaseModel):
 class Blog(BlogBase):
     id: int
     class Config():
-        from_attributes = True
+        orm_mode = True
 class UserInfoBase(BaseModel):
     description: str# Thông tin mô tả doanh nghiệp
     phone_number: str
@@ -41,7 +31,7 @@ class User(BaseModel):
     status: str
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
 class Login(BaseModel):
@@ -71,14 +61,14 @@ class Image(BaseModel):
     url: str
     
     class Config():
-        from_attributes = True
+        orm_mode = True
     
 class ShowImage(BaseModel):
     id: int
     url: str
     
     class Config():
-        from_attributes = True
+        orm_mode = True
 class City(BaseModel):
     name: str
     description: str
@@ -88,7 +78,7 @@ class ShowCity(City):
     images: List[ShowImage]
     
     class Config():
-        from_attributes = True
+        orm_mode = True
 
 class Address(BaseModel):
     district: str
@@ -101,7 +91,7 @@ class ShowAddress(Address):
     id: int
     
     class Config():
-        from_attributes = True
+        orm_mode = True
 class Destination(BaseModel):
     name : str
     price_bottom : int  
@@ -113,7 +103,7 @@ class Destination(BaseModel):
     description: Optional[str] = None
     
     class Config():
-        from_attributes = True
+        orm_mode = True
 class Destination_Address(Address, Destination):
     pass
 
@@ -134,11 +124,11 @@ class Hotel(BaseModel):
 class ShowRestaurant(Restaurant):
     id: int
     class Config():
-        from_attributes = True
+        orm_mode = True
 class ShowHotel(Hotel):
     id: int
     class Config():
-        from_attributes = True
+        orm_mode = True
 class ShowDestination(Destination):
     id: int
     hotel_id: Optional[int] = None
@@ -149,7 +139,7 @@ class ShowDestination(Destination):
     address : Optional[ShowAddress]= None
     
     class Config():
-        from_attributes = True
+        orm_mode = True
         
 class Review(BaseModel):
     title :str 
@@ -167,7 +157,7 @@ class ShowReview(Review):
     destination_id :int
     images: List[ShowImage]
     class Config():
-        from_attributes = True
+        orm_mode = True
    
 class ShowUserInfo(BaseModel):
     id: int
@@ -178,7 +168,7 @@ class ShowUserInfo(BaseModel):
 
     
     class Config():
-        from_attributes = True
+        orm_mode = True
 
 
 class ShowUser(BaseModel):
@@ -190,7 +180,7 @@ class ShowUser(BaseModel):
     
     user_info: Optional[ShowUserInfo]
     class Config():
-        from_attributes = True
+        orm_mode = True
 
 class ShowBlog(BaseModel):
     id: int
@@ -199,4 +189,4 @@ class ShowBlog(BaseModel):
     creator: ShowUser
 
     class Config():
-        from_attributes = True
+        orm_mode = True

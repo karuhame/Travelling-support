@@ -23,7 +23,9 @@ def get_city_by_id(id: int, db: Session = Depends(get_db)):
     return schemas.ShowCity.from_orm(result)
 @router.get("/", response_model=List[schemas.ShowCity])
 def get_all_city(db: Session = Depends(get_db)):
-    return city.get_all_city(db)
+    print("hi")
+    cities = city.get_all_city(db)
+    return [schemas.ShowCity.from_orm(city) for city in cities]
 
 
 @router.put("/{id}", response_model=schemas.ShowCity)
