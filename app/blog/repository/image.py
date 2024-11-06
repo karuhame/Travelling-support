@@ -32,11 +32,13 @@ class ImageHandler:
         self.root_dir = root_dir
         if not os.path.exists(self.root_dir):
             os.makedirs(self.root_dir)
+        
+
+    def crawl(self, keyword, max_num=5):
         self.chrome_options = Options()
         self.chrome_options.add_argument("--incognito")
         self.driver = webdriver.Chrome(options=self.chrome_options)
-
-    def crawl(self, keyword, max_num=5):
+        
         """Thu thập hình ảnh từ Google dựa trên từ khóa."""
         search_url = f"https://www.google.com/search?hl=vi&q={urllib.parse.quote(keyword)}&tbm=isch"
         
