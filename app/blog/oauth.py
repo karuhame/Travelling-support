@@ -10,6 +10,18 @@ CLIENT_SECRET = os.environ.get('client_secret')
 # this file is for google authentication
 
 # print(CLIENT_ID, CLIENT_SECRET)
+
+
+ENVIRONMENT = os.getenv('ENVIRONMENT', 'development')
+
+if ENVIRONMENT == 'development':
+    REDIRECT_URI = 'http://localhost:8000/authenGoogle/auth'
+    BASE_URL = 'http://localhost:8000'
+else:
+    REDIRECT_URI = 'https://pbl6-travel-fastapi-azfpceg2czdybuh3.eastasia-01.azurewebsites.net/authenGoogle/auth'
+    BASE_URL = 'https://pbl6-travel-fastapi-azfpceg2czdybuh3.eastasia-01.azurewebsites.net'
+
+# Cấu hình OAuth
 oauth = OAuth()
 oauth.register(
     name='google',
@@ -18,8 +30,6 @@ oauth.register(
     client_secret=CLIENT_SECRET,
     client_kwargs={
         'scope': 'email openid profile',
-        # 'redirect_url': 'http://127.0.0.1:8000/authenGoogle/auth'  # Sửa lại URL này
-        # 'redirect_url': 'http://localhost:8000/authenGoogle/auth'
-        'redirect_url': 'https://pbl6-travel-fastapi-azfpceg2czdybuh3.eastasia-01.azurewebsites.net/authenGoogle/auth'
+        'redirect_url': REDIRECT_URI
     }
 )

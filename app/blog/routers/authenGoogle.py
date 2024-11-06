@@ -3,6 +3,19 @@ from authlib.integrations.starlette_client import OAuthError
 from fastapi.responses import JSONResponse
 from blog.oauth import oauth
 import logging
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+ENVIRONMENT = os.getenv('ENVIRONMENT', 'development')
+
+if ENVIRONMENT == 'development':
+    REDIRECT_URI = 'http://localhost:8000/authenGoogle/auth'
+    BASE_URL = 'http://localhost:8000'
+else:
+    REDIRECT_URI = 'https://pbl6-travel-fastapi-azfpceg2czdybuh3.eastasia-01.azurewebsites.net/authenGoogle/auth'
+    BASE_URL = 'https://pbl6-travel-fastapi-azfpceg2czdybuh3.eastasia-01.azurewebsites.net'
+
 
 logger = logging.getLogger(__name__)
 
@@ -22,12 +35,13 @@ async def check_auth(request: Request):
 @router.get("/login-url")
 async def get_login_url(request: Request):
     try:
-        redirect_uri = request.url_for('auth')
+        # Sử dụng BASE_URL để xây dựng URL đầy đủ
+        redirect_uri = f"{BASE_URL}/authenGoogle/auth"
         return await oauth.google.authorize_redirect(request, redirect_uri)
     except Exception as e:
-        logger.error(f"Error generating login URL: {str(e)}")
-        raise HTTPException(status_code=500, detail="Error generating login URL")
-
+        logger.error(f"Error in login-url: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+    
 @router.get('/auth')
 async def auth(request: Request):
     try:
