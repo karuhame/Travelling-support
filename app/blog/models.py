@@ -66,7 +66,7 @@ class Destination(Base):
 
     # Foreign Key
     user_id = Column(Integer, ForeignKey('user.id', name="fk_destination_user", ondelete='CASCADE'))
-    address_id = Column(Integer, ForeignKey('address.id', name="fk_destination_address", ondelete='CASCADE'))
+    address_id = Column(Integer, ForeignKey('address.id', name="fk_destination_address", ondelete='CASCADE'), nullable=True)
     hotel_id = Column(Integer, ForeignKey('hotel.id', name="fk_destination_hotel", ondelete='CASCADE'), nullable=True)
     restaurant_id = Column(Integer, ForeignKey('restaurant.id', name="fk_destination_restaurant", ondelete='CASCADE'), nullable=True)
 

@@ -13,28 +13,38 @@ router = APIRouter(
 
 get_db = database.get_db
 
-
-@router.delete("/{id}")
-def delete_destination_by_id(id: int, db: Session = Depends(get_db)):
-    return destination.delete_by_id(id, db)
-
-@router.post("/")
+@router.post("/",
+             )
 def create_destination(
     images: List[UploadFile],
-    name: str,
-    price_bottom: int,
-    price_top: int,
-    age: int,
-    opentime: time,
-    duration: int,
-    date_create: date = date.today(),
-    address: Optional[schemas.ShowAddress] = None,
+    
+    name: str = None,
+    price_bottom: int = None,
+    price_top: int = None,
+    age: int = None,
+    opentime: time = None,
+    duration: int = None,
     description: Optional[str] = None,
-    db: Session = Depends(get_db)
+    date_create: date = date.today(),
+    
+    #address
+    district: str = None,
+    street: str = None,
+    ward: str = None,
+    city_id: int = None,
+    db: Session = Depends(get_db),
+    
 ):
+
+    address = schemas.Address(
+        district=district,
+        street=street,
+        ward=ward,
+        city_id=city_id,
+    )
+    
     sh_destination = schemas.Destination(
         name=name,
-        address=address,
         price_bottom=price_bottom,
         price_top=price_top,
         date_create=date_create,
@@ -45,60 +55,58 @@ def create_destination(
     )
 
     new_dest = destination.create(sh_destination, db)
-    return destination.add_images_to_review(db, images=images, destination_id=new_dest.id)
-@router.post("/hotel/{destination_id}", response_model=schemas.ShowHotel)
-def create_destination_by_cityID(request: schemas.Hotel, destination_id: int, db: Session = Depends(get_db)):
-    return destination.create_hotel_info_by_destinationID(request=request, destination_id=destination_id, db=db)
+    new_dest = destination.create_address_of_destination(db=db, destination=new_dest, address=address)
+    destination.add_images_to_destination(db, images=images, destination_id=new_dest.id)
+    
+    return schemas.ShowDestination.from_orm(new_dest)
 
-
-@router.post("/restaurant/{destination_id}", 
-             response_model=schemas.ShowRestaurant, 
-             summary="Tạo nhà hàng mới",
-             description="Tạo một nhà hàng mới cho một điểm đến cụ thể dựa trên destination_id.",
-             response_description="Thông tin về nhà hàng vừa được tạo.")
-def create_destination_by_cityID(
-    request: schemas.Restaurant = Body(..., description="Thông tin nhà hàng cần tạo."),
-    destination_id: int = Path(..., description="ID của điểm đến mà nhà hàng sẽ được gán vào."),
-    db: Session = Depends(get_db)
-):
-    return destination.create_restaurant_info_by_destinationID(request=request, destination_id=destination_id, db=db)
 @router.put("/{id}", response_model=schemas.ShowDestination)
-def update_destination_by_id(id: int, request: schemas.Destination, db: Session = Depends(get_db)):
-    return destination.update_by_id(id, request, db)
-
-@router.put("/restaurant/{restaurant_id}", response_model=schemas.ShowRestaurant)
-def update_restaurant_info_by_id(request: schemas.Restaurant, restaurant_id: int, db: Session = Depends(get_db)):
-    return destination.update_restaurant_info_by_id(request=request, id=restaurant_id, db=db)
-
-@router.get("/restaurants/")
-def get_all_restaurants( 
+def update_destination_by_id(
+    id: int,
+    images: List[UploadFile],
+    
+    name: str = None,
+    price_bottom: int = None,
+    price_top: int = None,
+    age: int = None,
+    opentime: time = None,
+    duration: int = None,
+    description: Optional[str] = None,
+    date_create: date = date.today(),
+    
+    #address
+    district: str = None,
+    street: str = None,
+    ward: str = None,
+    city_id: int = None,
     db: Session = Depends(get_db),
-    cuisines: list[str] = Query(default=[], alias='cuisines'),
+    
 ):
-    return destination.filter_restaurant(db, cuisines=cuisines) 
+    import pdb; pdb.set_trace()
+    address = schemas.Address(
+        district=district,
+        street=street,
+        ward=ward,
+        city_id=city_id,
+    )
+    
+    sh_destination = schemas.Destination(
+        name=name,
+        price_bottom=price_bottom,
+        price_top=price_top,
+        date_create=date_create,
+        age=age,
+        opentime=opentime,
+        duration=duration,
+        description=description
+    )
 
-@router.get("/restaurant/{restaurant_id}")
-def get_restaurant_info_by_id(restaurant_id: int, db: Session = Depends(get_db)):
-    return destination.get_destination_info( restaurant_id=restaurant_id, db=db)
+    new_dest = destination.update_by_id(id, sh_destination, db)
+    new_dest = destination.create_address_of_destination(db=db, destination=new_dest, address=address)
+    destination.add_images_to_destination(db, images=images, destination_id=new_dest.id)
+    
+    return schemas.ShowDestination.from_orm(new_dest)
 
-
-@router.put("/hotel/{hotel_id}", response_model=schemas.ShowHotel)
-def update_hotel_info_by_id(request: schemas.Hotel, hotel_id: int, db: Session = Depends(get_db)):
-    return destination.update_hotel_info_by_id(request=request, id=hotel_id, db=db)
-
-@router.get("/hotel/{hotel_id}")
-def get_hotel_info_by_id(hotel_id: int, db: Session = Depends(get_db)):
-    return destination.get_hotel_info( hotel_id=hotel_id, db=db)
-
-@router.get("/hotels/")
-def get_all_hotels( 
-    db: Session = Depends(get_db),
-    price_range: list[int] = Query(default=[], alias='price_range'),
-    amenities: list[str] = Query(default=[], alias='amenities'),
-    hotel_star: list[int] = Query(default=[], alias='hotel_star')
-):
-        
-    return destination.filter_hotel(db, price_range=price_range, amenities=amenities, hotel_star=hotel_star) 
 
 @router.get("/popular/{city_id}")
 def get_popular_destination_by_cityID(city_id: int, db: Session = Depends(get_db)):
@@ -108,6 +116,7 @@ def get_popular_destination_by_cityID(city_id: int, db: Session = Depends(get_db
 def get_destination(
     id: int = None,
     city_id: int = None,
+    
     sort_by_reviews: bool = False,
     get_rating: bool = False,
     db: Session = Depends(get_db)
@@ -146,3 +155,9 @@ def get_destination(
         final_results.append(result)
 
     return final_results
+
+
+@router.delete("/{id}")
+def delete_destination_by_id(id: int, db: Session = Depends(get_db)):
+    return destination.delete_by_id(id, db)
+    
