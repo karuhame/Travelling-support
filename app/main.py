@@ -1,11 +1,24 @@
 from fastapi import FastAPI
 from blog import models
 from blog.database import engine, create_sample_data, delete_all
-from blog.routers import blog,tour, user, authentication, userInfo, city, review, destination, hotel, restaurant
+from blog.routers import blog,tour, user, authentication, userInfo, city, review, destination,authenGoogle, destination, hotel, restaurant
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
         
 app = FastAPI()
+SESSION_SECRET_KEY = os.getenv("SESSION_SECRET_KEY")
+print(SESSION_SECRET_KEY)   
+# Session middleware phải được thêm trước CORS middleware
+app.add_middleware(
+    SessionMiddleware, 
+    secret_key=SESSION_SECRET_KEY,
+    max_age=3600
+)
 
 # Thêm CORS middleware
 app.add_middleware(
@@ -16,15 +29,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-# @app.on_event("startup")
-# def startup_event():
-# #     # delete_all(engine=engine)
-    
-#     models.Base.metadata.drop_all(bind=engine)
-#     models.Base.metadata.create_all(engine)
-#     create_sample_data() 
-
+app.include_router(authenGoogle.router)
 app.include_router(authentication.router)
 app.include_router(user.router)
 app.include_router(userInfo.router)
@@ -38,6 +43,13 @@ app.include_router(restaurant.router)
 
 
 
+# @app.on_event("startup")
+# def startup_event():
+# #     # delete_all(engine=engine)
+    
+#     models.Base.metadata.drop_all(bind=engine)
+#     models.Base.metadata.create_all(engine)
+#     create_sample_data() 
 
 # if __name__ == "__main__":
 #     import uvicorn
