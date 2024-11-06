@@ -66,6 +66,7 @@ async def update_image(db: Session, image: UploadFile, userInfo_id: int):
         # Lấy URL hình ảnh từ Azure
         url = imageHandler.get_image_url(blob_name_prefix=f"userInfoes/{userInfo_id}", img_file_name=f"{user_info.image.id}.png")
         
+        print("url:" + url)
         # Gán URL cho đối tượng hình ảnh
         user_info.image.url = url
         
