@@ -120,7 +120,8 @@ def create_user_info_by_userid(info: schemas.UserInfoBase, address: schemas.Addr
         new_user_info = models.UserInfo(
             description=info.description,
             phone_number=info.phone_number,
-            user_id=user_id
+            user_id=user_id,
+            address = new_address,
         )
         db.add(new_user_info)
         db.commit()

@@ -13,7 +13,7 @@ router = APIRouter(
 get_db = database.get_db
 
 
-@router.post("")
+@router.post("/")
 def create_user_info_by_userid(
     user_id: int,
     description: str,
