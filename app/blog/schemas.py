@@ -65,7 +65,7 @@ class Image(BaseModel):
     
 class ShowImage(BaseModel):
     id: int
-    url: str
+    url: Optional[str]
     
     class Config():
         orm_mode = True
