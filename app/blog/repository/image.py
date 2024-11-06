@@ -160,12 +160,13 @@ class ImageHandler:
         return file_location  # Trả về đường dẫn tệp hoặc URL
     def __del__(self):
         """Giải phóng tài nguyên khi đối tượng bị hủy."""
-        self.driver.quit()
+        if self.driver is not None:
+            self.driver.quit()
 
     @staticmethod
     def crawl_image(db: Session, city = None, destination = None):
             
-        from app.blog import models
+        # from app.blog import models
         
         google_crawler = ImageHandler()
         if city:
