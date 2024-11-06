@@ -1,7 +1,17 @@
 from typing import List, Optional
 from fastapi import UploadFile
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import date, time
+class Test(BaseModel):
+    txt: str = Field(..., description="Tên của điểm đến.")
+    name: str = Field(...)
+    price_bottom: int = Field(...)
+    price_top: int = Field(...)
+    date_create: date = Field(date.today())
+    age: int = Field(...)
+    opentime: time = Field(...)
+    duration: int = Field(...)
+    description: Optional[str] = Field(None)
 class BlogBase(BaseModel):
     title: str
     body: str
@@ -94,7 +104,6 @@ class ShowAddress(Address):
         from_attributes = True
 class Destination(BaseModel):
     name : str
-    address : Optional[ShowAddress]= None
     price_bottom : int  
     price_top : int  
     date_create : date 
@@ -112,10 +121,6 @@ class Restaurant(BaseModel):
     cuisine: Optional[str] = None
     special_diet: Optional[str] = None
 
-class ShowRestaurant(Restaurant):
-    id: int
-    class Config():
-        from_attributes = True
 class Hotel(BaseModel):
     property_amenities: str
     room_features: str
@@ -123,13 +128,17 @@ class Hotel(BaseModel):
     hotel_class: int
     hotel_styles: str
     Languages: str
+
+
+
+class ShowRestaurant(Restaurant):
+    id: int
+    class Config():
+        from_attributes = True
 class ShowHotel(Hotel):
     id: int
     class Config():
         from_attributes = True
-
-
-
 class ShowDestination(Destination):
     id: int
     hotel_id: Optional[int] = None
@@ -137,6 +146,7 @@ class ShowDestination(Destination):
     hotel: Optional[ShowHotel] = None
     restaurant: Optional[ShowRestaurant] = None
     images: List[ShowImage]
+    address : Optional[ShowAddress]= None
     
     class Config():
         from_attributes = True

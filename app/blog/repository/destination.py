@@ -6,21 +6,42 @@ from fastapi import HTTPException, UploadFile, status
 from blog.hashing import Hash
 from blog.repository.image import ImageHandler
 
-def create(request: schemas.Destination_Address, db: Session):
+def create_address_of_destination(db: Session, destination: models.Destination, address):
     try:
+        if not destination.address: 
         # Tạo địa chỉ mới
-        new_address = models.Address(
-            district=request.district,
-            street=request.street,
-            ward=request.ward,
-            city_id=request.city_id  # Sử dụng city_id làm khóa ngoại
-        )
+            new_address = models.Address(
+                district=address.district,
+                street=address.street,
+                ward=address.ward,
+                city_id=address.city_id  # Sử dụng city_id làm khóa ngoại
+            )
+            
+            # Thêm địa chỉ vào cơ sở dữ liệu
+            db.add(new_address)
+            db.commit()  # Commit để lưu địa chỉ
+            db.refresh(new_address)  # Làm mới địa chỉ để lấy ID
+            destination.address_id = new_address.id
+        else:
+            destination.address.district = address.district
+            destination.address.street = address.street
+            destination.address.ward = address.ward
+            destination.address.city_id = address.city_id
+        # Tạo điểm đến mới
         
-        # Thêm địa chỉ vào cơ sở dữ liệu
-        db.add(new_address)
-        db.commit()  # Commit để lưu địa chỉ
-        db.refresh(new_address)  # Làm mới địa chỉ để lấy ID
+        # Thêm điểm đến vào cơ sở dữ liệu
+        db.add(destination)
+        db.commit()  # Commit để lưu điểm đến
+        db.refresh(destination)  # Làm mới đối tượng mới
 
+        return destination
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail=f"Error creating address: {str(e)}")
+
+def create(request, db: Session):
+    try:
         # Tạo điểm đến mới
         new_destination = models.Destination(
             name=request.name,
@@ -30,7 +51,8 @@ def create(request: schemas.Destination_Address, db: Session):
             age=request.age,
             opentime=request.opentime,
             duration=request.duration,
-            address=new_address  # Liên kết đến địa chỉ vừa tạo
+            description=request.description
+
         )
         
         # Thêm điểm đến vào cơ sở dữ liệu
@@ -40,6 +62,7 @@ def create(request: schemas.Destination_Address, db: Session):
 
         return new_destination
     except Exception as e:
+        db.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=f"Error creating destination: {str(e)}")
 def get_by_id(id: int, db: Session):
@@ -69,6 +92,7 @@ def get_by_id(id: int, db: Session):
         # return schemas.ShowDestination(**destination_data)
         return destination
     except Exception as e:
+        db.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=f"Error retrieving destination: {str(e)}")
 
@@ -89,6 +113,7 @@ def get_by_city_id(city_id: int, db: Session):
 
         return results
     except Exception as e:
+        db.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=f"Error retrieving destinations: {str(e)}")
 
@@ -97,6 +122,7 @@ def get_all(db: Session):
         destinations = db.query(models.Destination).all()  # Chờ truy vấn
         return destinations
     except Exception as e:
+        db.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=f"Error retrieving destinations: {str(e)}")
 def sorting_by_ratings_and_quantity_of_reviews(destinations: List[models.Destination], db: Session):
@@ -124,6 +150,7 @@ def sorting_by_ratings_and_quantity_of_reviews(destinations: List[models.Destina
         return sorted_destinations
 
     except Exception as e:
+        db.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=f"Error sorting destinations: {str(e)}")
         
@@ -134,12 +161,23 @@ def update_by_id(id: int, request: schemas.Destination, db: Session):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                                 detail=f"destination with the id {id} is not available")
 
-        destination.name = request.name
-        destination.email = request.email
-        db.commit()  # Chờ hoàn tất việc commit
-        db.refresh(destination)  # Chờ làm mới đối tượng mới
-        return destination
+        destination.name =request.name,
+        destination.price_bottom =request.price_bottom,
+        destination.price_top =request.price_top,
+        destination.date_create =request.date_create,
+        destination.age =request.age,
+        destination.opentime =request.opentime,
+        destination.duration =request.duration,
+        destination.description=request.description,
+
+        
+        # Thêm điểm đến vào cơ sở dữ liệu
+        db.commit()  # Commit để lưu điểm đến
+        db.refresh(destination)  # Làm mới đối tượng mới
+
+        return destination 
     except Exception as e:
+        db.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=f"Error updating destination: {str(e)}")
 
@@ -154,90 +192,11 @@ def delete_by_id(id: int, db: Session):
         db.commit()  # Chờ hoàn tất việc commit
         return {"detail": "destination deleted successfully"}
     except Exception as e:
+        db.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=f"Error deleting destination: {str(e)}")
 
-def create_restaurant_info_by_destinationID(destination_id: int, request:schemas.Restaurant, db: Session):
-    try:
-        destination = db.query(models.Destination).filter(models.Destination.id == destination_id).first()  # Chờ truy vấn
-        new_restaurant = models.Restaurant(
-            cuisine = request.cuisine,
-            special_diet = request.special_diet
-        )
-        db.add(new_restaurant)
-        db.commit()  # Chờ hoàn tất việc commit
-        db.refresh(new_restaurant)  # Chờ làm mới đối tượng mới
-        
-        destination.restaurant_id = new_restaurant.id
-        db.commit()
-        db.refresh(destination)
-        return new_restaurant
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail=f"Error deleting destination: {str(e)}")
 
-def update_restaurant_info_by_id(id:int, request: schemas.Restaurant, db: Session):
-    try:
-        restaurant = db.query(models.Restaurant).filter(models.Restaurant.id == id).first()  # Chờ truy vấn
-        if not restaurant:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                                detail=f"restaurant with the id {id} is not available")
-
-        restaurant.cuisine = request.cuisine
-        restaurant.special_diet = request.special_diet
-        db.commit()  # Chờ hoàn tất việc commit
-        db.refresh(restaurant)  # Chờ làm mới đối tượng mới
-        return restaurant
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail=f"Error updating destination: {str(e)}")
-        
-
-
-def create_hotel_info_by_destinationID(destination_id: int, request:schemas.Hotel, db: Session):
-    try:
-        destination = db.query(models.Destination).filter(models.Destination.id == destination_id).first()  # Chờ truy vấn
-        new_hotel = models.Hotel(
-            property_amenities = request.property_amenities,
-            room_features = request.room_features,
-            room_types = request.room_types,
-            hotel_class = request.hotel_class,
-            hotel_styles = request.hotel_styles,
-            Languages = request.Languages
-        )
-        db.add(new_hotel)
-        db.commit()  # Chờ hoàn tất việc commit
-        db.refresh(new_hotel)  # Chờ làm mới đối tượng mới
-        
-        destination.hotel_id = new_hotel.id
-        db.commit()
-        db.refresh(destination)
-        return new_hotel
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail=f"Error deleting destination: {str(e)}")
-
-def update_hotel_info_by_id(id:int, request: schemas.Hotel, db: Session):
-    try:
-        hotel = db.query(models.Hotel).filter(models.Hotel.id == id).first()  # Chờ truy vấn
-        if not hotel:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                                detail=f"hotel with the id {id} is not available")
-
-        hotel.property_amenities = request.property_amenities,
-        hotel.room_features = request.room_features,
-        hotel.room_types = request.room_types,
-        hotel.hotel_class = request.hotel_class,
-        hotel.hotel_styles = request.hotel_styles,
-        hotel.Languages = request.Languages
-
-        db.commit()  # Chờ hoàn tất việc commit
-        db.refresh(hotel)  # Chờ làm mới đối tượng mới
-        return hotel
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail=f"Error updating destination: {str(e)}")
-        
 
 def get_ratings_and_reviews_number_of_destinationID(destination_id: int, db: Session):
     reviews = db.query(models.Review).filter(models.Review.destination_id == destination_id).all()
@@ -259,201 +218,10 @@ def get_ratings_and_reviews_number_of_destinationID(destination_id: int, db: Ses
             "ratings": 0,
             "numberOfReviews": 0
         }
-        
-def get_hotel_info(hotel_id: int, db: Session):
-    # Truy vấn để lấy thông tin khách sạn
-    hotel = db.query(models.Hotel).filter(models.Hotel.id == hotel_id).first()
-    
-    if hotel is None:
-        return {"error": "Hotel not found"}
-
-    # Lấy thông tin điểm đến liên quan
-    destination = db.query(models.Destination).filter(models.Destination.hotel_id == hotel_id).first()
-    
-    # Lấy thông tin địa chỉ
-    address = db.query(models.Address).filter(models.Address.id == destination.address_id).first() if destination else None
-
-    # Lấy thông tin đánh giá liên quan
-    reviews = db.query(models.Review).filter(models.Review.destination_id == destination.id).all()
-
-    # Tính toán số lượng đánh giá và tổng điểm
-    num_of_reviews = len(reviews)
-    total_rating = sum(review.rating for review in reviews) if num_of_reviews > 0 else 0
-    average_rating = total_rating // num_of_reviews if num_of_reviews > 0 else 0
-
-    # Gom các trường trong bảng Address thành một chuỗi
-    address_string = f"{address.ward}, {address.district}, {address.street}" if address else "No address available"
-
-    # Lấy tất cả URL hình ảnh liên quan đến khách sạn
-    images = db.query(models.Image).filter(models.Image.destination_id == destination.id).all() if destination else []
-    img_urls = [image.url for image in images]
-
-    # Tạo từ điển với thông tin khách sạn
-    hotel_info = {
-        "id": hotel.id,
-        "name": destination.name ,
-        "address": address_string,
-        "price": destination.price_bottom if destination else 0,
-        "phone": hotel.phone,
-        "email": hotel.email,
-        "website": hotel.website,
-        "features": hotel.room_features.split(",") if hotel.room_features else [],
-        "amenities": hotel.property_amenities.split(",") if hotel.property_amenities else [],
-        "description": destination.description, 
-        "rating": average_rating,
-        "numOfReviews": num_of_reviews,
-        "imgURL": img_urls
-    }
-
-    return hotel_info
-
-def get_popular_destinations_by_city_ID(city_id: int, db: Session):
-    # Truy vấn để lấy danh sách các điểm đến phổ biến
-    popular_destinations = (
-        db.query(models.Destination)
-        .outerjoin(models.Review, models.Destination.id == models.Review.destination_id)  # Kết hợp với bảng Review
-        .filter(models.Destination.address.has(city_id=city_id))  # Lọc theo city_id
-        .group_by(models.Destination.id)  # Nhóm theo id của Destination
-        .having(func.avg(models.Review.rating) >= 4.5)  # Điều kiện xếp hạng
-        .having(func.count(models.Review.id) >= 1000)  # Điều kiện số lượng đánh giá
-        .all()
-    )
-
-    # Tạo danh sách chứa thông tin các điểm đến
-    destination_list = []
-    for destination in popular_destinations:
-        # Lấy thông tin địa chỉ
-        address = destination.address
-        location = f"{address.street}, {address.district}, {address.city.name}, Vietnam" if address else "Unknown Location"
-
-        # Lấy tất cả hình ảnh liên quan đến điểm đến
-        images = db.query(models.Image).filter(models.Image.destination_id == destination.id).limit(5).all()  # Lấy tối đa 5 hình ảnh
-        image_urls = [image.url for image in images]
-
-        # Tính tổng số lượng đánh giá
-        num_of_reviews = len(destination.reviews)
-
-        # Tạo từ điển với thông tin điểm đến
-        destination_info = {
-            "id": destination.id,
-            "name": destination.name,
-            "category": "popular",
-            "image": image_urls,
-            "location": location,
-            "review": num_of_reviews,
-            "price": destination.price_bottom,  
-
-            "description": destination.description,  
-            "rate": func.avg(models.Review.rating)  
-        }
-
-        destination_list.append(destination_info)
-
-    return destination_list
-
-def get_all_hotel(db: Session):
-    # Truy vấn để lấy tất cả khách sạn
-    hotels = db.query(models.Hotel).all()
-    
-    hotel_list = []
-
-    for hotel in hotels:
-        # Lấy thông tin điểm đến liên quan
-        destination = db.query(models.Destination).filter(models.Destination.hotel_id == hotel.id).first()
-        
-        # Lấy thông tin đánh giá liên quan
-        reviews = db.query(models.Review).filter(models.Review.destination_id == destination.id).all()
-
-        # Tính toán số lượng đánh giá và tổng điểm
-        num_of_reviews = len(reviews)
-        total_rating = sum(review.rating for review in reviews) if num_of_reviews > 0 else 0
-        average_rating = total_rating // num_of_reviews if num_of_reviews > 0 else 0
-        
-        # Lấy thông tin địa chỉ từ điểm đến
-        address_string = (
-            f"{destination.address.district}, {destination.address.street}, {destination.address.ward}"
-            if destination and destination.address else "No address available"
-        )
-
-        # Lấy tất cả URL hình ảnh liên quan đến khách sạn
-        images = db.query(models.Image).filter(models.Image.destination_id == destination.id).all() if destination else []
-        img_urls = [image.url for image in images]
-
-        # Tạo từ điển với thông tin khách sạn
-        hotel_info = {
-            "id": hotel.id,
-            "name": destination.name if destination else "Unnamed Destination",
-            "address": address_string,
-            "rating": average_rating,
-            "numOfReviews": num_of_reviews,
-            "features": hotel.room_features.split(",") if hotel.room_features else [],
-            "imgURL": img_urls[0] if img_urls else None  # Lấy URL đầu tiên nếu có
-        }
-
-        hotel_list.append(hotel_info)
-
-    return hotel_list
-
-
-def filter_hotel(db: Session, price_range = [str], amenities = [str], hotel_star = [int]):
-    hotels = db.query(models.Hotel).all()
-    # Chuyển đổi hotel_star thành danh sách số nguyên nếu cần
-    hotel_star = [int(star) for star in hotel_star]
-    # Lọc khách sạn theo các tiêu chí
-    filtered_hotels = []
-
-    for hotel in hotels:
-        # Kiểm tra điều kiện cho amenities
-        if amenities:
-            amenities_list = [amenity.strip().lower() for amenity in hotel.property_amenities.split(',')]
-            if not all(amenity.lower() in amenities_list for amenity in amenities):
-                continue  # Nếu không có tất cả amenities yêu cầu, bỏ qua khách sạn này
-
-        # Kiểm tra điều kiện cho hotel_class
-        if hotel_star and hotel.hotel_class  not in hotel_star:
-            continue  # Nếu lớp khách sạn không nằm trong danh sách yêu cầu, bỏ qua
-        
-        # Kiểm tra điều kiện cho price_range
-        if price_range:
-            price_top = hotel.destination.price_top  # Giả sử bạn có thuộc tính này trong mô hình
-            price_category = ""
-
-            if price_top > 3000000:
-                price_category = "high"
-            elif price_top > 1000000:
-                price_category = "middle"
-            else:
-                price_category = "low"
-
-            if price_category not in price_range:
-                continue  # Nếu không nằm trong danh sách price_range, bỏ qua khách sạn
-
-        # Thêm khách sạn vào danh sách đã lọc
-        filtered_hotels.append(hotel)
-
-    return filtered_hotels
-
-
-
-def filter_restaurant(db: Session, cuisines = [str], features = [str], good_for = [str], other = [str]):
-    restaurants = db.query(models.Restaurant).all()
-
-    # Lọc khách sạn theo các tiêu chí
-    filtered_restaurants = []
-
-    for restaurant in restaurants:
-        # Kiểm tra điều kiện cho amenities
-        if cuisines:
-            cuisines_list = [cuisin.strip().lower() for cuisin in restaurant.cuisine.split(',')]
-            if not all(cuisin.lower() in cuisines_list for cuisin in cuisines):
-                continue 
-        filtered_restaurants.append(restaurant)
-    return filtered_restaurants
-
+     
 
 
 def add_images_to_destination(db: Session, images: list[UploadFile], destination_id: int):
-    local_filenames = []
     imageHandler = ImageHandler()
 
     for image in images:
@@ -483,6 +251,7 @@ def add_images_to_destination(db: Session, images: list[UploadFile], destination
             db.refresh(img)  # Làm mới đối tượng
                 
         except Exception as e:
+            db.rollback()
             print(f"Could not process image {img_file_name}: {e}")
     
     return {"status": "success", "destination_id": destination_id}
@@ -492,5 +261,6 @@ def get_destination_info(db:Session, restaurant_id: int):
         restaurant = db.query(models.Restaurant).filter(models.Restaurant.id == restaurant_id).first()
         return restaurant
     except Exception as e:
+        db.rollback()
         print(f"Error detail: {e}")
     

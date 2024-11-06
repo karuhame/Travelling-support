@@ -68,8 +68,8 @@ def create_sample_data():
         existing_users = db.execute(select(models.User)).scalars().all()
         if not existing_users:  # Nếu không có người dùng nào
             # Tạo dữ liệu mẫu cho người dùng
-            user1_data = schemas.User(username='user1', email='user1@gmail.com', password='123', role="guest")
-            admin1_data = schemas.User(username='admin1', email='admin1@gmail.com', password='123', role="admin")
+            user1_data = schemas.User(username='user1', email='user1@gmail.com', password='123', role="guest", status="enable")
+            admin1_data = schemas.User(username='admin1', email='admin1@gmail.com', password='123', role="admin", status="enable")
 
             # Gọi hàm create cho mỗi người dùng
             user1 = repository.user.create_business_admin(user1_data, db)
@@ -104,7 +104,7 @@ def create_sample_data():
                 password = '123'
 
                 # Tạo người dùng
-                user_data = schemas.User(username=username, email=email, password=password, role="business")
+                user_data = schemas.User(username=username, email=email, password=password, role="business", status="enable")
                 user = repository.user.create_business_admin(user_data, db)
 
                 # Tạo thông tin người dùng
@@ -122,11 +122,11 @@ def create_sample_data():
                 db.refresh(city)
                 
                 # crawl data cho city
-                # ImageHandler.crawl_image(db=db, city= city)
+                ImageHandler.crawl_image(db=db, city= city)
                 # image.crawl_image(db=db, city=city )
                 
                 # Thêm 1 điểm đến cho mỗi user
-                for j in range(1):
+                for j in range(2):
                     
                     address = models.Address(
                         district = f"district of {cities[i]}",
@@ -153,8 +153,8 @@ def create_sample_data():
                     db.commit()
                     db.refresh(destination)
                     
-                    # imageHandler = ImageHandler()
-                    # imageHandler.fake_db_destination(db, destination=destination)
+                    imageHandler = ImageHandler()
+                    imageHandler.fake_db_destination(db, destination=destination)
                     
                     hotel = models.Hotel(
                         property_amenities='Free WiFi, Pool, Gym',
@@ -189,7 +189,7 @@ def create_sample_data():
                         db.add(review)
                         db.commit()
                         db.refresh(review)
-                        # imageHandler.fake_db_review(db, review=review)
+                        imageHandler.fake_db_review(db, review=review)
                         
                     
             db.commit()
