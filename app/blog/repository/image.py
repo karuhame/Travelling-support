@@ -116,15 +116,16 @@ class ImageHandler:
         return downloaded_images
     
     async def upload_to_azure(self, img_file_name, blob_name_prefix):
-        """Tải lên hình ảnh lên Azure Blob Storage."""
-        async with BlobServiceClient.from_connection_string(self.connection_string) as blob_service_client:
-            container_client = blob_service_client.get_container_client(self.container_name)
-            blob_client = container_client.get_blob_client(blob_name_prefix)
+        try:
+            async with BlobServiceClient.from_connection_string(self.connection_string) as blob_service_client:
+                container_client = blob_service_client.get_container_client(self.container_name)
+                blob_client = container_client.get_blob_client(blob_name_prefix)
 
-            with open(img_file_name, "rb") as data:
-                await blob_client.upload_blob(data, overwrite=True, content_type='image/png')
-                print(f"Uploaded {img_file_name} to Azure as {blob_name_prefix}")
-
+                with open(img_file_name, "rb") as data:
+                    await blob_client.upload_blob(data, overwrite=True, content_type='image/png')
+                    print(f"Uploaded {img_file_name} to Azure as {blob_name_prefix}")
+        except Exception as e:
+            raise RuntimeError(f"Failed to upload image: {e}")
     async def update_image_azure(self, img_file_name, blob_name_prefix):
         """Cập nhật hình ảnh đã tồn tại trong Azure Blob Storage."""
         await self.upload_to_azure(img_file_name, blob_name_prefix)  # Overwrites the existing blob
