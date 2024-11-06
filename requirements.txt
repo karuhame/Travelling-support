@@ -1,4 +1,5 @@
 aiomysql==0.1.1
+aiohttp==3.10.10
 alembic==1.14.0
 annotated-types==0.7.0
 anyio==4.6.0
