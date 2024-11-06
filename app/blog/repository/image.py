@@ -117,11 +117,10 @@ class ImageHandler:
     
     async def upload_to_azure(self, img_file_name, blob_name_prefix):
         """Tải lên hình ảnh lên Azure Blob Storage."""
-        blob_service_client = BlobServiceClient.from_connection_string(self.connection_string)
-        container_client = blob_service_client.get_container_client(self.container_name)
-        blob_client = container_client.get_blob_client(blob_name_prefix)
+        async with BlobServiceClient.from_connection_string(self.connection_string) as blob_service_client:
+            container_client = blob_service_client.get_container_client(self.container_name)
+            blob_client = container_client.get_blob_client(blob_name_prefix)
 
-        async with blob_client:
             with open(img_file_name, "rb") as data:
                 await blob_client.upload_blob(data, overwrite=True, content_type='image/png')
                 print(f"Uploaded {img_file_name} to Azure as {blob_name_prefix}")
@@ -132,15 +131,15 @@ class ImageHandler:
 
     async def delete_image_azure(self, blob_name_prefix):
         """Xóa hình ảnh khỏi Azure Blob Storage."""
-        blob_service_client = BlobServiceClient.from_connection_string(self.connection_string)
-        container_client = blob_service_client.get_container_client(self.container_name)
+        async with BlobServiceClient.from_connection_string(self.connection_string) as blob_service_client:
+            container_client = blob_service_client.get_container_client(self.container_name)
+            blob_client = container_client.get_blob_client(blob_name_prefix)
 
-        blob_client = container_client.get_blob_client(blob_name_prefix)
-        try:
-            await blob_client.delete_blob()
-            print(f"Deleted {blob_name_prefix} from Azure.")
-        except ResourceNotFoundError:
-            print(f"The blob {blob_name_prefix} does not exist.")
+            try:
+                await blob_client.delete_blob()
+                print(f"Deleted {blob_name_prefix} from Azure.")
+            except ResourceNotFoundError:
+                print(f"The blob {blob_name_prefix} does not exist.")
             
     def get_image_url(self, blob_name_prefix, img_file_name):
         """Lấy URL của hình ảnh từ Azure Blob Storage."""

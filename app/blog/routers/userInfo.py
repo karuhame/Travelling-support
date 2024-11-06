@@ -54,7 +54,7 @@ def get_user_info(id: int, db: Session = Depends(get_db), current_user: schemas.
     return schemas.ShowUserInfo.from_orm(user_info)  # Trả về thông tin người dùng
 
 @router.put("/{id}")
-def update_user_info(
+async def update_user_info(
     id: int,
     user_id: int,
     description: str,
@@ -83,7 +83,7 @@ def update_user_info(
     
     user_info = userInfo.update_user_info(address=address, info=info, id=id, db=db)
 
-    userInfo.update_image(db,image=image, userInfo_id=user_info.id)
+    await userInfo.update_image(db,image=image, userInfo_id=user_info.id)
     return schemas.ShowUserInfo.from_orm(user_info)
 @router.delete("/{id}")
 def delete_user_info(id: int, db: Session = Depends(get_db), current_user: schemas.User = Depends(oauth2.get_current_user)):
