@@ -158,14 +158,11 @@ class ImageHandler:
         with open(file_location, "wb") as file:
             file.write(image.file.read())
         return file_location  # Trả về đường dẫn tệp hoặc URL
-    def __del__(self):
-        """Giải phóng tài nguyên khi đối tượng bị hủy."""
-        self.driver.quit()
 
     @staticmethod
     def crawl_image(db: Session, city = None, destination = None):
             
-        from app.blog import models
+        # from app.blog import models
         
         google_crawler = ImageHandler()
         if city:

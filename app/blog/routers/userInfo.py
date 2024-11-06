@@ -13,7 +13,7 @@ router = APIRouter(
 get_db = database.get_db
 
 
-@router.post("")
+@router.post("/")
 def create_user_info_by_userid(
     user_id: int,
     description: str,
@@ -49,12 +49,12 @@ def create_user_info_by_userid(
     return schemas.ShowUserInfo.from_orm(user_info)
 
 @router.get("/{id}")
-def get_user_info_by_id(id: int, db: Session = Depends(get_db), current_user: schemas.User = Depends(oauth2.get_current_user)):
+def get_user_info(id: int, db: Session = Depends(get_db), current_user: schemas.User = Depends(oauth2.get_current_user)):
     user_info = userInfo.get_userInfo_by_id(db=db, id=id)  # Gọi hàm với await
     return schemas.ShowUserInfo.from_orm(user_info)  # Trả về thông tin người dùng
 
 @router.put("/{id}")
-def update_user_info_by_userid(
+def update_user_info(
     id: int,
     user_id: int,
     description: str,
@@ -86,7 +86,7 @@ def update_user_info_by_userid(
     userInfo.update_image(db,image=image, userInfo_id=user_info.id)
     return schemas.ShowUserInfo.from_orm(user_info)
 @router.delete("/{id}")
-def delete_user_info_by_userid(id: int, db: Session = Depends(get_db), current_user: schemas.User = Depends(oauth2.get_current_user)):
+def delete_user_info(id: int, db: Session = Depends(get_db), current_user: schemas.User = Depends(oauth2.get_current_user)):
     return userInfo.delete_user_info(id, db)
 
 @router.get("/")
