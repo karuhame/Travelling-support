@@ -106,6 +106,24 @@ async def update_destination_by_id(
     
     return schemas.ShowDestination.from_orm(new_dest)
 
+@router.get("/{id}")
+@router.get("/")
+def get_destination_by_id(
+    id: int = None,    
+    db: Session = Depends(get_db)
+):
+    dest = destination.get_by_id(id, db)
+    if not dest:
+        return {"error": "Destination not found"}
+    result = schemas.ShowDestination.from_orm(dest).dict()
+    rating_info = destination.get_ratings_and_reviews_number_of_destinationID(dest.id, db)
+    result.update({
+        "rating": rating_info["ratings"],
+        "numOfReviews": rating_info["numberOfReviews"]
+    })
+    return result
+
+
 @router.get("/")
 def get_destination(
     id: int = None,
