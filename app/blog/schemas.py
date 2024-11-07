@@ -112,12 +112,16 @@ class Restaurant(BaseModel):
     special_diet: Optional[str] = None
 
 class Hotel(BaseModel):
-    property_amenities: str
-    room_features: str
-    room_types: str
+    property_amenities: Optional[str]
+    room_features: Optional[str]
+    room_types: Optional[str]
     hotel_class: int
-    hotel_styles: str
-    Languages: str
+    hotel_styles: Optional[str]
+    Languages: Optional[str]
+    phone: Optional[str]
+    email: Optional[str]
+    website: Optional[str]
+    
 
 
 

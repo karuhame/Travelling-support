@@ -67,3 +67,18 @@ def update_restaurant_info_by_id(id:int, request: schemas.Restaurant, db: Sessio
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=f"Error updating destination: {str(e)}")
         
+def filter_restaurant(db: Session, cuisines = [str], features = [str], good_for = [str], other = [str]):
+    
+    restaurants = db.query(models.Restaurant).all()
+
+    # Lọc khách sạn theo các tiêu chí
+    filtered_restaurants = []
+
+    for restaurant in restaurants:
+        # Kiểm tra điều kiện cho amenities
+        if cuisines:
+            cuisines_list = [cuisin.strip().lower() for cuisin in restaurant.cuisine.split(',')]
+            if not all(cuisin.lower() in cuisines_list for cuisin in cuisines):
+                continue 
+        filtered_restaurants.append(restaurant)
+    return filtered_restaurants
