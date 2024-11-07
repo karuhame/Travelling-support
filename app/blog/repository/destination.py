@@ -161,14 +161,14 @@ def update_by_id(id: int, request: schemas.Destination, db: Session):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                                 detail=f"destination with the id {id} is not available")
 
-        destination.name =request.name,
-        destination.price_bottom =request.price_bottom,
-        destination.price_top =request.price_top,
-        destination.date_create =request.date_create,
-        destination.age =request.age,
-        destination.opentime =request.opentime,
-        destination.duration =request.duration,
-        destination.description=request.description,
+        destination.name =request.name
+        destination.price_bottom =request.price_bottom
+        destination.price_top =request.price_top
+        destination.date_create =request.date_create
+        destination.age =request.age
+        destination.opentime =request.opentime
+        destination.duration =request.duration
+        destination.description=request.description
 
         
         # Thêm điểm đến vào cơ sở dữ liệu
@@ -221,7 +221,7 @@ def get_ratings_and_reviews_number_of_destinationID(destination_id: int, db: Ses
      
 
 
-def add_images_to_destination(db: Session, images: list[UploadFile], destination_id: int):
+async def add_images_to_destination(db: Session, images: list[UploadFile], destination_id: int):
     imageHandler = ImageHandler()
 
     for image in images:
@@ -239,7 +239,7 @@ def add_images_to_destination(db: Session, images: list[UploadFile], destination
 
             # Tải lên hình ảnh lên Azure
             blob_name = f"destinations/{destination_id}/{img.id}.png"  # Tên blob
-            imageHandler.upload_to_azure(img_file_name, blob_name)  # Tải lên Azure
+            await imageHandler.upload_to_azure(img_file_name, blob_name)  # Tải lên Azure
 
             # Lấy URL hình ảnh từ Azure
             url = imageHandler.get_image_url(blob_name_prefix=f"destinations/{destination_id}", img_file_name=f"{img.id}.png")

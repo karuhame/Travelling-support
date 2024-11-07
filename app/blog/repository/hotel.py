@@ -5,28 +5,14 @@ from blog import models, schemas
 from fastapi import HTTPException, UploadFile, status
 from blog.hashing import Hash
 from blog.repository.image import ImageHandler
+from blog.repository import destination
 
 
 
 
-def filter_restaurant(db: Session, cuisines = [str], features = [str], good_for = [str], other = [str]):
-    
-    restaurants = db.query(models.Restaurant).all()
-
-    # Lọc khách sạn theo các tiêu chí
-    filtered_restaurants = []
-
-    for restaurant in restaurants:
-        # Kiểm tra điều kiện cho amenities
-        if cuisines:
-            cuisines_list = [cuisin.strip().lower() for cuisin in restaurant.cuisine.split(',')]
-            if not all(cuisin.lower() in cuisines_list for cuisin in cuisines):
-                continue 
-        filtered_restaurants.append(restaurant)
-    return filtered_restaurants
 
 
-def create_hotel_info_by_destinationID(destination_id: int, request:schemas.Hotel, db: Session):
+def create_by_destinationID(destination_id: int, request:schemas.Hotel, db: Session):
     try:
         destination = db.query(models.Destination).filter(models.Destination.id == destination_id).first()  # Chờ truy vấn
         new_hotel = models.Hotel(
@@ -87,6 +73,9 @@ def update_hotel_info_by_id(id:int, request: schemas.Hotel, db: Session):
         hotel.hotel_class = request.hotel_class,
         hotel.hotel_styles = request.hotel_styles,
         hotel.Languages = request.Languages
+        hotel.phone = request.phone
+        hotel.email = request.email
+        hotel.website = request.website
 
         db.commit()  # Chờ hoàn tất việc commit
         db.refresh(hotel)  # Chờ làm mới đối tượng mới
@@ -96,51 +85,6 @@ def update_hotel_info_by_id(id:int, request: schemas.Hotel, db: Session):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=f"Error updating destination: {str(e)}")
         
-        
-
-def get_popular_destinations_by_city_ID(city_id: int, db: Session):
-    # Truy vấn để lấy danh sách các điểm đến phổ biến
-    popular_destinations = (
-        db.query(models.Destination)
-        .outerjoin(models.Review, models.Destination.id == models.Review.destination_id)  # Kết hợp với bảng Review
-        .filter(models.Destination.address.has(city_id=city_id))  # Lọc theo city_id
-        .group_by(models.Destination.id)  # Nhóm theo id của Destination
-        .having(func.avg(models.Review.rating) >= 4.5)  # Điều kiện xếp hạng
-        .having(func.count(models.Review.id) >= 1000)  # Điều kiện số lượng đánh giá
-        .all()
-    )
-
-    # Tạo danh sách chứa thông tin các điểm đến
-    destination_list = []
-    for destination in popular_destinations:
-        # Lấy thông tin địa chỉ
-        address = destination.address
-        location = f"{address.street}, {address.district}, {address.city.name}, Vietnam" if address else "Unknown Location"
-
-        # Lấy tất cả hình ảnh liên quan đến điểm đến
-        images = db.query(models.Image).filter(models.Image.destination_id == destination.id).limit(5).all()  # Lấy tối đa 5 hình ảnh
-        image_urls = [image.url for image in images]
-
-        # Tính tổng số lượng đánh giá
-        num_of_reviews = len(destination.reviews)
-
-        # Tạo từ điển với thông tin điểm đến
-        destination_info = {
-            "id": destination.id,
-            "name": destination.name,
-            "category": "popular",
-            "image": image_urls,
-            "location": location,
-            "review": num_of_reviews,
-            "price": destination.price_bottom,  
-
-            "description": destination.description,  
-            "rate": func.avg(models.Review.rating)  
-        }
-
-        destination_list.append(destination_info)
-
-    return destination_list
 
 def get_all_hotel(db: Session):
     # Truy vấn để lấy tất cả khách sạn
@@ -196,7 +140,7 @@ def filter_hotel(city_id: int, db: Session, price_range = [str], amenities = [st
     
     dest = None
     if city_id:
-        dests = get_by_city_id(db=db, city_id=city_id)
+        dests = destination.get_by_city_id(db=db, city_id=city_id)
 
         
 
@@ -280,3 +224,18 @@ def get_hotel_info(hotel_id: int, db: Session):
 
     return hotel_info
 
+
+def delete_by_id(id: int, db: Session):
+    try:
+        hotel = db.query(models.Hotel).filter(models.Hotel.id == id).first()  # Chờ truy vấn
+        if not hotel:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                detail=f"hotel with the id {id} is not available")
+
+        db.delete(hotel)  # Chờ xóa đối tượng
+        db.commit()  # Chờ hoàn tất việc commit
+        return {"detail": "hotel deleted successfully"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail=f"Error deleting hotel: {str(e)}")

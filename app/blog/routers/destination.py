@@ -15,7 +15,7 @@ get_db = database.get_db
 
 @router.post("/",
              )
-def create_destination(
+async def create_destination(
     images: List[UploadFile],
     
     name: str = None,
@@ -56,12 +56,12 @@ def create_destination(
 
     new_dest = destination.create(sh_destination, db)
     new_dest = destination.create_address_of_destination(db=db, destination=new_dest, address=address)
-    destination.add_images_to_destination(db, images=images, destination_id=new_dest.id)
+    await destination.add_images_to_destination(db, images=images, destination_id=new_dest.id)
     
     return schemas.ShowDestination.from_orm(new_dest)
 
 @router.put("/{id}", response_model=schemas.ShowDestination)
-def update_destination_by_id(
+async def update_destination_by_id(
     id: int,
     images: List[UploadFile],
     
@@ -82,7 +82,6 @@ def update_destination_by_id(
     db: Session = Depends(get_db),
     
 ):
-    import pdb; pdb.set_trace()
     address = schemas.Address(
         district=district,
         street=street,
@@ -103,21 +102,16 @@ def update_destination_by_id(
 
     new_dest = destination.update_by_id(id, sh_destination, db)
     new_dest = destination.create_address_of_destination(db=db, destination=new_dest, address=address)
-    destination.add_images_to_destination(db, images=images, destination_id=new_dest.id)
+    await destination.add_images_to_destination(db, images=images, destination_id=new_dest.id)
     
     return schemas.ShowDestination.from_orm(new_dest)
-
-
-@router.get("/popular/{city_id}")
-def get_popular_destination_by_cityID(city_id: int, db: Session = Depends(get_db)):
-    return destination.get_popular_destinations_by_city_ID(city_id=city_id, db=db)
 
 @router.get("/")
 def get_destination(
     id: int = None,
     city_id: int = None,
     
-    sort_by_reviews: bool = False,
+    is_popular: bool = False,
     get_rating: bool = False,
     db: Session = Depends(get_db)
 ):
@@ -139,7 +133,7 @@ def get_destination(
         results = destination.get_all(db)
 
     # Nếu cần sắp xếp theo đánh giá
-    if sort_by_reviews:
+    if is_popular:
         results = destination.sorting_by_ratings_and_quantity_of_reviews(destinations=results, db=db)
 
     # Chuyển đổi các kết quả sang định dạng mong muốn

@@ -34,11 +34,11 @@ app.include_router(authentication.router)
 app.include_router(user.router)
 app.include_router(userInfo.router)
 app.include_router(city.router)
-app.include_router(review.router)
 app.include_router(destination.router)
-app.include_router(tour.router)
 app.include_router(hotel.router)
 app.include_router(restaurant.router)
+app.include_router(review.router)
+app.include_router(tour.router)
 
 
 
