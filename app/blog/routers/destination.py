@@ -106,17 +106,12 @@ async def update_destination_by_id(
     
     return schemas.ShowDestination.from_orm(new_dest)
 
-
-@router.get("/popular/{city_id}")
-def get_popular_destination_by_cityID(city_id: int, db: Session = Depends(get_db)):
-    return destination.get_popular_destinations_by_city_ID(city_id=city_id, db=db)
-
 @router.get("/")
 def get_destination(
     id: int = None,
     city_id: int = None,
     
-    sort_by_reviews: bool = False,
+    is_popular: bool = False,
     get_rating: bool = False,
     db: Session = Depends(get_db)
 ):
@@ -138,7 +133,7 @@ def get_destination(
         results = destination.get_all(db)
 
     # Nếu cần sắp xếp theo đánh giá
-    if sort_by_reviews:
+    if is_popular:
         results = destination.sorting_by_ratings_and_quantity_of_reviews(destinations=results, db=db)
 
     # Chuyển đổi các kết quả sang định dạng mong muốn
