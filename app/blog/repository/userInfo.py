@@ -5,6 +5,27 @@ from fastapi import HTTPException, UploadFile, status
 from blog.hashing import Hash
 from blog.repository.image import ImageHandler
 
+async def add_default_avatar(db: Session, userInfo_id: int):
+    imageHandler = ImageHandler()
+    default_avatar_url = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSSlKZSwwbFBoiLx-hWWmEfVIZ1jADecLCEhQ&s"
+    
+    try:
+        # Tạo đối tượng Image mới
+        img = models.Image(
+            userInfo_id=userInfo_id,
+            url=default_avatar_url  # Sử dụng URL mặc định
+        )
+        db.add(img)
+        db.commit()
+        db.refresh(img)
+        
+        return img
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to add default avatar: {str(e)}"
+        )
 
 async def add_image_to_userInfo(db: Session, image: UploadFile, userInfo_id: int):
     imageHandler = ImageHandler()
