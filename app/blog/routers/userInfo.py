@@ -14,7 +14,7 @@ get_db = database.get_db
 
 
 @router.post("/")
-def create_user_info_by_userid(
+async def create_user_info_by_userid(
     user_id: int,
     description: str,
     phone_number: str,
@@ -44,7 +44,7 @@ def create_user_info_by_userid(
     user_info = userInfo.create_user_info_by_userid(address=address, info=info, user_id=user_id, db=db)
 
     # Thêm hình ảnh vào thông tin người dùng
-    userInfo.add_image_to_userInfo(db, image, user_info.id)
+    await userInfo.add_image_to_userInfo(db, image, user_info.id)
 
     return schemas.ShowUserInfo.from_orm(user_info)
 
