@@ -12,7 +12,7 @@ load_dotenv()
         
 app = FastAPI()
 SESSION_SECRET_KEY = os.getenv("SESSION_SECRET_KEY")
-print(SESSION_SECRET_KEY)   
+# print(SESSION_SECRET_KEY)   
 # Session middleware phải được thêm trước CORS middleware
 app.add_middleware(
     SessionMiddleware, 

@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from blog import models, schemas
 from fastapi import HTTPException, status
 from blog.hashing import Hash
+from typing import Optional
 
 def create(request: schemas.User, db: Session):
     try:
@@ -113,3 +114,15 @@ def change_status(db: Session, user_id:int ):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=f"Error deleting user: {str(e)}")
+    
+
+
+# Hàm này trả về None nếu không tìm thấy user
+# Không raise exception vì đây là business logic bình thường
+# Sử dụng Optional type hint để chỉ rõ hàm có thể trả về None
+def get_user_by_email(email: str, db: Session) -> Optional[models.User]:
+    """
+    Lấy thông tin user theo email.
+    Trả về None nếu không tìm thấy user, không raise exception.
+    """
+    return db.query(models.User).filter(models.User.email == email).first()
