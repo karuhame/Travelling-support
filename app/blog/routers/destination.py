@@ -126,7 +126,6 @@ def get_destination_by_id(
 
 @router.get("/")
 def get_destination(
-    id: int = None,
     city_id: int = None,
     
     is_popular: bool = False,
@@ -134,16 +133,7 @@ def get_destination(
     db: Session = Depends(get_db)
 ):
     results = []
-
-    # Nếu có id, lấy destination theo ID
-    if id:
-        dest = destination.get_by_id(id, db)
-        if not dest:
-            return {"error": "Destination not found"}
-        results.append(dest)
-
-    # Nếu có city_id, lấy destinations theo city_id
-    elif city_id:
+    if city_id:
         results = destination.get_by_city_id(city_id, db)
 
     # Nếu không có id hay city_id, lấy tất cả destinations
