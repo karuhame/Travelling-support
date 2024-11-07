@@ -15,7 +15,7 @@ get_db = database.get_db
 
 @router.post("/",
              )
-def create_destination(
+async def create_destination(
     images: List[UploadFile],
     
     name: str = None,
@@ -56,12 +56,12 @@ def create_destination(
 
     new_dest = destination.create(sh_destination, db)
     new_dest = destination.create_address_of_destination(db=db, destination=new_dest, address=address)
-    destination.add_images_to_destination(db, images=images, destination_id=new_dest.id)
+    await destination.add_images_to_destination(db, images=images, destination_id=new_dest.id)
     
     return schemas.ShowDestination.from_orm(new_dest)
 
 @router.put("/{id}", response_model=schemas.ShowDestination)
-def update_destination_by_id(
+async def update_destination_by_id(
     id: int,
     images: List[UploadFile],
     
@@ -82,7 +82,6 @@ def update_destination_by_id(
     db: Session = Depends(get_db),
     
 ):
-    import pdb; pdb.set_trace()
     address = schemas.Address(
         district=district,
         street=street,
@@ -103,7 +102,7 @@ def update_destination_by_id(
 
     new_dest = destination.update_by_id(id, sh_destination, db)
     new_dest = destination.create_address_of_destination(db=db, destination=new_dest, address=address)
-    destination.add_images_to_destination(db, images=images, destination_id=new_dest.id)
+    await destination.add_images_to_destination(db, images=images, destination_id=new_dest.id)
     
     return schemas.ShowDestination.from_orm(new_dest)
 
