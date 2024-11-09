@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from blog import models
 from blog.database import engine, create_sample_data, delete_all
-from blog.routers import blog,tour, user, authentication, userInfo, city, review, destination,authenGoogle, destination, hotel, restaurant
+from blog.routers import blog,tour, user, authentication, userInfo, city, review, destination,authenGoogle, destination, hotel, restaurant, address
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -33,12 +33,14 @@ app.include_router(authenGoogle.router)
 app.include_router(authentication.router)
 app.include_router(user.router)
 app.include_router(userInfo.router)
+app.include_router(address.router)
 app.include_router(city.router)
 app.include_router(destination.router)
 app.include_router(hotel.router)
 app.include_router(restaurant.router)
 app.include_router(review.router)
 app.include_router(tour.router)
+
 
 
 

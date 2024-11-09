@@ -24,7 +24,7 @@ async def add_default_avatar(db: Session, userInfo_id: int):
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to add default avatar: {str(e)}"
+            detail=f"Failed to add default avatar: {str(e.detail)}"
         )
 
 async def add_image_to_userInfo(db: Session, image: UploadFile, userInfo_id: int):
@@ -55,7 +55,7 @@ async def add_image_to_userInfo(db: Session, image: UploadFile, userInfo_id: int
         db.refresh(img)  # Làm mới đối tượng
             
     except Exception as e:
-        print(f"Could not process image {img_file_name}: {e}")
+        print(f"Could not process image {img_file_name}: {str(e)}")
     
     return {"status": "success", "userInfo_id": userInfo_id}
 
@@ -97,7 +97,7 @@ async def update_image(db: Session, image: UploadFile, userInfo_id: int):
             
     except Exception as e:
         print(f"Could not process image {img_file_name}: {e}")
-        raise HTTPException(status_code=500, detail=f"Could not process image: {str(e)}")  # Trả về lỗi nếu có
+        raise HTTPException(status_code=500, detail=f"Could not process image: {str(e.detail)}")  # Trả về lỗi nếu có
 
     return {"status": "success", "userInfo_id": userInfo_id}
 async def delete_image(db: Session, userInfo_id: int):
@@ -119,7 +119,7 @@ async def delete_image(db: Session, userInfo_id: int):
     except Exception as e:
         db.rollback()  # Hoàn tác nếu có lỗi
         print(f"Could not delete image: {e}")
-        raise HTTPException(status_code=500, detail="Failed to delete image")
+        raise HTTPException(status_code=500, detail=f"Failed to delete image: {str(e.detail)} ")
 
     return {"status": "success", "userInfo_id": userInfo_id}
 
@@ -163,7 +163,9 @@ def get_user_info_by_userid(user_id: int, db: Session):
                                 detail=f"UserInfo with the user_id {user_id} is not available")
         return user_info
     except Exception as e:
+        print(f"Error: {str(e.detail)}")  # In ra lỗi để kiểm tra
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to retrieve user info")
+
 def get_userInfo_by_id(db:Session, id: int):
     try:
         user_info =  db.query(models.UserInfo).filter(models.UserInfo.id == id).first()  # Chờ truy vấn
@@ -171,8 +173,13 @@ def get_userInfo_by_id(db:Session, id: int):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                                 detail=f"UserInfo with the id {id} is not available")
         return user_info
+
+    except HTTPException as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to retrieve user info:{e.detail}")
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to retrieve user info")
+            # Bắt mọi lỗi khác có thể xảy ra
+            print(f"Unexpected Error: {str(e.detail)}")  # In ra lỗi bất ngờ
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to retrieve user info")
 
 def get_all(db: Session):
     try:
@@ -180,7 +187,7 @@ def get_all(db: Session):
         return user_infoes
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail=f"Error retrieving userinfo: {str(e)}")
+                            detail=f"Error retrieving userinfo: {str(e.detail)}")
 
 def update_user_info(info: schemas.UserInfoBase, address: schemas.Address, id: int, db: Session):
     
@@ -188,6 +195,7 @@ def update_user_info(info: schemas.UserInfoBase, address: schemas.Address, id: i
         # Tìm UserInfo theo ID
         user_info = db.query(models.UserInfo).filter(models.UserInfo.id == id).first()
         if not user_info:
+            print("no")
             raise HTTPException(status_code=404, detail="UserInfo not found")
 
         # Cập nhật thông tin UserInfo
@@ -220,7 +228,8 @@ def update_user_info(info: schemas.UserInfoBase, address: schemas.Address, id: i
         return user_info
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to update user info")
+        print(f"Exception type: {type(e).__name__}, message: {str(e.detail)}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to update user info:{str(e.detail)}")
     
 def delete_user_info(id: int, db: Session):
     try:

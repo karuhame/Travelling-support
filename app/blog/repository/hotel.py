@@ -177,52 +177,63 @@ def filter_hotel(city_id: int, db: Session, price_range = [str], amenities = [st
 
 
    
-def get_hotel_info(hotel_id: int, db: Session):
-    # Truy vấn để lấy thông tin khách sạn
-    hotel = db.query(models.Hotel).filter(models.Hotel.id == hotel_id).first()
+def get_hotel_info(id: int, db: Session):
     
-    if hotel is None:
-        return {"error": "Hotel not found"}
+    dest = db.query(models.Destination).filter(models.Destination.hotel_id == id).first()
+    if not dest:
+        return {"error": "Destination not found"}
+    result = schemas.ShowDestination.from_orm(dest).dict()
+    rating_info = destination.get_ratings_and_reviews_number_of_destinationID(dest.id, db)
+    result.update({
+        "rating": rating_info["ratings"],
+        "numOfReviews": rating_info["numberOfReviews"]
+    })
 
-    # Lấy thông tin điểm đến liên quan
-    destination = db.query(models.Destination).filter(models.Destination.hotel_id == hotel_id).first()
+    # # Truy vấn để lấy thông tin khách sạn
+    # hotel = db.query(models.Hotel).filter(models.Hotel.id == hotel_id).first()
     
-    # Lấy thông tin địa chỉ
-    address = db.query(models.Address).filter(models.Address.id == destination.address_id).first() if destination else None
+    # if hotel is None:
+    #     return {"error": "Hotel not found"}
 
-    # Lấy thông tin đánh giá liên quan
-    reviews = db.query(models.Review).filter(models.Review.destination_id == destination.id).all()
+    # # Lấy thông tin điểm đến liên quan
+    # destination = db.query(models.Destination).filter(models.Destination.hotel_id == hotel_id).first()
+    
+    # # Lấy thông tin địa chỉ
+    # address = db.query(models.Address).filter(models.Address.id == destination.address_id).first() if destination else None
 
-    # Tính toán số lượng đánh giá và tổng điểm
-    num_of_reviews = len(reviews)
-    total_rating = sum(review.rating for review in reviews) if num_of_reviews > 0 else 0
-    average_rating = total_rating // num_of_reviews if num_of_reviews > 0 else 0
+    # # Lấy thông tin đánh giá liên quan
+    # reviews = db.query(models.Review).filter(models.Review.destination_id == destination.id).all()
 
-    # Gom các trường trong bảng Address thành một chuỗi
-    address_string = f"{address.ward}, {address.district}, {address.street}" if address else "No address available"
+    # # Tính toán số lượng đánh giá và tổng điểm
+    # num_of_reviews = len(reviews)
+    # total_rating = sum(review.rating for review in reviews) if num_of_reviews > 0 else 0
+    # average_rating = total_rating // num_of_reviews if num_of_reviews > 0 else 0
 
-    # Lấy tất cả URL hình ảnh liên quan đến khách sạn
-    images = db.query(models.Image).filter(models.Image.destination_id == destination.id).all() if destination else []
-    img_urls = [image.url for image in images]
+    # # Gom các trường trong bảng Address thành một chuỗi
+    # address_string = f"{address.ward}, {address.district}, {address.street}" if address else "No address available"
 
-    # Tạo từ điển với thông tin khách sạn
-    hotel_info = {
-        "id": hotel.id,
-        "name": destination.name ,
-        "address": address_string,
-        "price": destination.price_bottom if destination else 0,
-        "phone": hotel.phone,
-        "email": hotel.email,
-        "website": hotel.website,
-        "features": hotel.room_features.split(",") if hotel.room_features else [],
-        "amenities": hotel.property_amenities.split(",") if hotel.property_amenities else [],
-        "description": destination.description, 
-        "rating": average_rating,
-        "numOfReviews": num_of_reviews,
-        "imgURL": img_urls
-    }
+    # # Lấy tất cả URL hình ảnh liên quan đến khách sạn
+    # images = db.query(models.Image).filter(models.Image.destination_id == destination.id).all() if destination else []
+    # img_urls = [image.url for image in images]
 
-    return hotel_info
+    # # Tạo từ điển với thông tin khách sạn
+    # hotel_info = {
+    #     "id": hotel.id,
+    #     "name": destination.name ,
+    #     "address": address_string,
+    #     "price": destination.price_bottom if destination else 0,
+    #     "phone": hotel.phone,
+    #     "email": hotel.email,
+    #     "website": hotel.website,
+    #     "features": hotel.room_features.split(",") if hotel.room_features else [],
+    #     "amenities": hotel.property_amenities.split(",") if hotel.property_amenities else [],
+    #     "description": destination.description, 
+    #     "rating": average_rating,
+    #     "numOfReviews": num_of_reviews,
+    #     "imgURL": img_urls
+    # }
+
+    return result
 
 
 def delete_by_id(id: int, db: Session):

@@ -45,4 +45,6 @@ def get_all_hotels(
     amenities: list[str] = Query(default=[], alias='amenities'),
     hotel_star: list[int] = Query(default=[], alias='hotel_star')
 ):
-    return hotel.filter_hotel(city_id=city_id,db=db, price_range=price_range, amenities=amenities, hotel_star=hotel_star) 
+    hotels = hotel.filter_hotel(city_id=city_id,db=db, price_range=price_range, amenities=amenities, hotel_star=hotel_star) 
+    hotel_ids = [hotel.id for hotel in hotels]
+    print(hotel_ids)
