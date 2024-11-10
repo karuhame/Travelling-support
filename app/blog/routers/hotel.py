@@ -41,10 +41,25 @@ def get_all_hotels(
     is_popular: bool = None,
     
     db: Session = Depends(get_db),
-    price_range: list[int] = Query(default=[], alias='price_range'),
+    price_range: list[str] = Query(default=[], alias='price_range'
+                                   , description="Danh sách các khoảng giá (ví dụ: 'low', 'middle', 'high')"),
     amenities: list[str] = Query(default=[], alias='amenities'),
     hotel_star: list[int] = Query(default=[], alias='hotel_star')
 ):
-    hotels = hotel.filter_hotel(city_id=city_id,db=db, price_range=price_range, amenities=amenities, hotel_star=hotel_star) 
-    hotel_ids = [hotel.id for hotel in hotels]
-    print(hotel_ids)
+    
+    hotels = hotel.get_all_hotel(db, city_id)
+    
+    if any([price_range, amenities, hotel_star]):
+        hotels = hotel.filter_hotel(hotels = hotels, db=db, price_range=price_range, amenities=amenities, hotel_star=hotel_star) 
+    
+    if is_popular == True:
+        hotels = destination.sorting_by_ratings_and_quantity_of_reviews(db=db, destinations=hotels)
+    
+    results = []
+    for hotel_dest in hotels:
+        hotel_info = hotel.get_hotel_info(db=db, id = hotel_dest.id)
+        results.append(hotel_info)
+    
+    return results
+    
+    

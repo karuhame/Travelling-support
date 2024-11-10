@@ -16,7 +16,7 @@ get_db = database.get_db
 @router.post("/",
              )
 async def create_destination(
-    images: List[UploadFile],
+    images: Optional[List[UploadFile]] = None,
     
     name: str = None,
     price_bottom: int = None,
@@ -63,7 +63,7 @@ async def create_destination(
 @router.put("/{id}", response_model=schemas.ShowDestination)
 async def update_destination_by_id(
     id: int,
-    images: List[UploadFile],
+    images: Optional[List[UploadFile]] = None,
     
     name: str = None,
     price_bottom: int = None,
@@ -162,4 +162,3 @@ def get_destination(
 @router.delete("/{id}")
 def delete_destination_by_id(id: int, db: Session = Depends(get_db)):
     return destination.delete_by_id(id, db)
-    

@@ -93,13 +93,13 @@ class ShowAddress(Address):
     class Config():
         orm_mode = True
 class Destination(BaseModel):
-    name : str
-    price_bottom : int  
-    price_top : int  
-    date_create : date 
-    age : int  
-    opentime : time
-    duration : int 
+    name : Optional[str]
+    price_bottom : Optional[int]  
+    price_top : Optional[int]  
+    date_create : Optional[date] 
+    age : Optional[int]  
+    opentime : Optional[time]
+    duration : Optional[int] 
     description: Optional[str] = None
     
     class Config():
@@ -139,7 +139,7 @@ class ShowDestination(Destination):
     restaurant_id: Optional[int] = None
     hotel: Optional[ShowHotel] = None
     restaurant: Optional[ShowRestaurant] = None
-    images: List[ShowImage]
+    images: Optional[List[ShowImage]]
     address : Optional[ShowAddress]= None
     
     class Config():

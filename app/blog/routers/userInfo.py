@@ -22,7 +22,7 @@ async def create_user_info_by_userid(
     street: str,
     ward: str,
     city_id: int,
-    image: UploadFile = File(...),  
+    image: Optional[UploadFile] = File(None),  
     db: Session = Depends(get_db),
     current_user: schemas.User = Depends(oauth2.get_current_user)
 ):
@@ -63,7 +63,7 @@ async def update_user_info(
     street: str,
     ward: str,
     city_id: int,
-    image: UploadFile = File(...),  
+    image: Optional[UploadFile] = File(None),  
     db: Session = Depends(get_db),
     current_user: schemas.User = Depends(oauth2.get_current_user)
 ):

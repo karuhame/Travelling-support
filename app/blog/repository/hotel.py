@@ -7,7 +7,9 @@ from blog.hashing import Hash
 from blog.repository.image import ImageHandler
 from blog.repository import destination
 
-
+from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
+from fastapi import HTTPException
 
 
 
@@ -85,66 +87,16 @@ def update_hotel_info_by_id(id:int, request: schemas.Hotel, db: Session):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=f"Error updating destination: {str(e)}")
         
-
-def get_all_hotel(db: Session):
-    # Truy vấn để lấy tất cả khách sạn
-    hotels = db.query(models.Hotel).all()
+def filter_hotel(hotels: list[models.Destination], db: Session, price_range = [str], amenities = [str], hotel_star = [int]):
     
-    hotel_list = []
-
-    for hotel in hotels:
-        # Lấy thông tin điểm đến liên quan
-        destination = db.query(models.Destination).filter(models.Destination.hotel_id == hotel.id).first()
-        
-        # Lấy thông tin đánh giá liên quan
-        reviews = db.query(models.Review).filter(models.Review.destination_id == destination.id).all()
-
-        # Tính toán số lượng đánh giá và tổng điểm
-        num_of_reviews = len(reviews)
-        total_rating = sum(review.rating for review in reviews) if num_of_reviews > 0 else 0
-        average_rating = total_rating // num_of_reviews if num_of_reviews > 0 else 0
-        
-        # Lấy thông tin địa chỉ từ điểm đến
-        address_string = (
-            f"{destination.address.district}, {destination.address.street}, {destination.address.ward}"
-            if destination and destination.address else "No address available"
-        )
-
-        # Lấy tất cả URL hình ảnh liên quan đến khách sạn
-        images = db.query(models.Image).filter(models.Image.destination_id == destination.id).all() if destination else []
-        img_urls = [image.url for image in images]
-
-        # Tạo từ điển với thông tin khách sạn
-        hotel_info = {
-            "id": hotel.id,
-            "name": destination.name if destination else "Unnamed Destination",
-            "address": address_string,
-            "rating": average_rating,
-            "numOfReviews": num_of_reviews,
-            "features": hotel.room_features.split(",") if hotel.room_features else [],
-            "imgURL": img_urls[0] if img_urls else None  # Lấy URL đầu tiên nếu có
-        }
-
-        hotel_list.append(hotel_info)
-
-    return hotel_list
-
-# property_amenities = Column(String(255), default='Free Parking, Pool, Free breakfast')
-
-def filter_hotel(city_id: int, db: Session, price_range = [str], amenities = [str], hotel_star = [int]):
-    hotels = db.query(models.Hotel).all()
     # Chuyển đổi hotel_star thành danh sách số nguyên nếu cần
     hotel_star = [int(star) for star in hotel_star]
     # Lọc khách sạn theo các tiêu chí
     filtered_hotels = []
-    
-    dest = None
-    if city_id:
-        dests = destination.get_by_city_id(db=db, city_id=city_id)
 
-        
-
-    for hotel in hotels:
+    for dest in hotels:
+        print(dest.price_top)
+        hotel = dest.hotel
         # Kiểm tra điều kiện cho amenities
         if amenities:
             amenities_list = [amenity.strip().lower() for amenity in hotel.property_amenities.split(',')]
@@ -157,7 +109,7 @@ def filter_hotel(city_id: int, db: Session, price_range = [str], amenities = [st
         
         # Kiểm tra điều kiện cho price_range
         if price_range:
-            price_top = hotel.destination.price_top  # Giả sử bạn có thuộc tính này trong mô hình
+            price_top = dest.price_top  # Giả sử bạn có thuộc tính này trong mô hình
             price_category = ""
 
             if price_top > 3000000:
@@ -171,7 +123,7 @@ def filter_hotel(city_id: int, db: Session, price_range = [str], amenities = [st
                 continue  # Nếu không nằm trong danh sách price_range, bỏ qua khách sạn
 
         # Thêm khách sạn vào danh sách đã lọc
-        filtered_hotels.append(hotel)
+        filtered_hotels.append(dest)
 
     return filtered_hotels
 
@@ -188,53 +140,48 @@ def get_hotel_info(id: int, db: Session):
         "rating": rating_info["ratings"],
         "numOfReviews": rating_info["numberOfReviews"]
     })
-
-    # # Truy vấn để lấy thông tin khách sạn
-    # hotel = db.query(models.Hotel).filter(models.Hotel.id == hotel_id).first()
-    
-    # if hotel is None:
-    #     return {"error": "Hotel not found"}
-
-    # # Lấy thông tin điểm đến liên quan
-    # destination = db.query(models.Destination).filter(models.Destination.hotel_id == hotel_id).first()
-    
-    # # Lấy thông tin địa chỉ
-    # address = db.query(models.Address).filter(models.Address.id == destination.address_id).first() if destination else None
-
-    # # Lấy thông tin đánh giá liên quan
-    # reviews = db.query(models.Review).filter(models.Review.destination_id == destination.id).all()
-
-    # # Tính toán số lượng đánh giá và tổng điểm
-    # num_of_reviews = len(reviews)
-    # total_rating = sum(review.rating for review in reviews) if num_of_reviews > 0 else 0
-    # average_rating = total_rating // num_of_reviews if num_of_reviews > 0 else 0
-
-    # # Gom các trường trong bảng Address thành một chuỗi
-    # address_string = f"{address.ward}, {address.district}, {address.street}" if address else "No address available"
-
-    # # Lấy tất cả URL hình ảnh liên quan đến khách sạn
-    # images = db.query(models.Image).filter(models.Image.destination_id == destination.id).all() if destination else []
-    # img_urls = [image.url for image in images]
-
-    # # Tạo từ điển với thông tin khách sạn
-    # hotel_info = {
-    #     "id": hotel.id,
-    #     "name": destination.name ,
-    #     "address": address_string,
-    #     "price": destination.price_bottom if destination else 0,
-    #     "phone": hotel.phone,
-    #     "email": hotel.email,
-    #     "website": hotel.website,
-    #     "features": hotel.room_features.split(",") if hotel.room_features else [],
-    #     "amenities": hotel.property_amenities.split(",") if hotel.property_amenities else [],
-    #     "description": destination.description, 
-    #     "rating": average_rating,
-    #     "numOfReviews": num_of_reviews,
-    #     "imgURL": img_urls
-    # }
-
     return result
 
+
+
+def get_all_hotel(db: Session, city_id: int = None):
+    dest_hotels = []
+    
+    try:
+        if city_id is not None:
+            # Lấy danh sách khách sạn theo city_id
+            dest_hotels = db.query(models.Destination).join(models.Address).filter(
+                models.Destination.hotel_id.isnot(None),
+                models.Address.city_id == city_id
+            ).all()
+
+        else:
+            # Lấy tất cả khách sạn không có giá trị Null
+            dest_hotels = db.query(models.Destination).filter(
+                models.Destination.hotel_id.isnot(None)
+            ).all()
+
+        return dest_hotels
+        
+        results = []
+        for hotel in dest_hotels:
+            # Lấy thông tin điểm đến liên quan
+            hotel_info = get_hotel_info(db=db, id=hotel.id)
+            results.append(hotel_info)
+
+        return results
+
+    except SQLAlchemyError as e:
+        # Ghi log lỗi hoặc xử lý lỗi tùy ý
+        print(f"Database error occurred: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+    except Exception as e:
+        # Bắt các lỗi khác
+        print(f"An error occurred: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+# property_amenities = Column(String(255), default='Free Parking, Pool, Free breakfast')
 
 def delete_by_id(id: int, db: Session):
     try:

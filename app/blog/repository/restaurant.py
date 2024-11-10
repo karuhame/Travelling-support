@@ -10,7 +10,7 @@ from blog.repository.image import ImageHandler
 
 
 
-def create_restaurant_info_by_destinationID(destination_id: int, request:schemas.Restaurant, db: Session):
+def create_by_destinationID(destination_id: int, request:schemas.Restaurant, db: Session):
     try:
         destination = db.query(models.Destination).filter(models.Destination.id == destination_id).first()  # Chờ truy vấn
         new_restaurant = models.Restaurant(
@@ -28,7 +28,7 @@ def create_restaurant_info_by_destinationID(destination_id: int, request:schemas
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail=f"Error deleting destination: {str(e)}")
+                            detail=f"Error create destination: {str(e)}")
 
 def create_restaurant_of_destination(destination: models.Destination, request:schemas.Restaurant, db: Session):
     try:
