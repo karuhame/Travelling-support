@@ -22,7 +22,7 @@ class Tour(BaseModel):
     city_id: int
     
     destination_ids: List[int]
-
+    
 class User(BaseModel):
     username:str
     email:str
@@ -198,5 +198,29 @@ class ShowBlog(BaseModel):
     body:str
     creator: ShowUser
 
+    class Config():
+        orm_mode = True
+
+class ShowDestinationOfTour(Destination):
+    id: int
+    hotel_id: Optional[int] = None
+    restaurant_id: Optional[int] = None
+    images: Optional[List[ShowImage]]
+    address : Optional[ShowAddress]= None
+    
+    class Config():
+        orm_mode = True
+        
+        
+class ShowTour(BaseModel):
+    id: int
+    name: str
+    description: str
+    duration: int
+    user_id: int
+    city_id: int
+    
+    destinations: Optional[List[ShowDestinationOfTour]]
+    
     class Config():
         orm_mode = True
