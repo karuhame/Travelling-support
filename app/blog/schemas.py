@@ -108,8 +108,14 @@ class Destination_Address(Address, Destination):
     pass
 
 class Restaurant(BaseModel):
-    cuisine: Optional[str] = None
-    special_diet: Optional[str] = None
+    cuisine: Optional[str] = Field(
+        default=None,
+        examples="Italian, Japanese, Vietnamese"
+    )
+    special_diet: Optional[str] = Field(
+        default=None,
+        description="Special dietary options that the restaurant can accommodate (e.g., vegan, gluten-free, etc.)"
+    )
 
 class Hotel(BaseModel):
     property_amenities: Optional[str]

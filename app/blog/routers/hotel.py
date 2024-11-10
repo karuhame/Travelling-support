@@ -15,27 +15,27 @@ get_db = database.get_db
 
 
 
-@router.post("/hotel/{destination_id}", response_model=schemas.ShowHotel)
-def create_destination_by_cityID(request: schemas.Hotel, destination_id: int, db: Session = Depends(get_db)):
+@router.post("/{destination_id}", response_model=schemas.ShowHotel)
+def create_by_destinationID(request: schemas.Hotel, destination_id: int, db: Session = Depends(get_db)):
     return hotel.create_by_destinationID(request=request, destination_id=destination_id, db=db)
 
 
-@router.put("/hotel/{id}", response_model=schemas.ShowHotel)
+@router.put("/{id}", response_model=schemas.ShowHotel)
 def update_hotel_info_by_id(request: schemas.Hotel, id: int, db: Session = Depends(get_db)):
     return hotel.update_hotel_info_by_id(request=request, id=id, db=db)
 
-@router.delete("/hotel/{id}")
+@router.delete("/{id}")
 def update_hotel_info_by_id(id: int, db: Session = Depends(get_db)):
     return hotel.delete_by_id(id=id, db=db)
 
 
 
-@router.get("/hotel/{id}")
+@router.get("/{id}")
 def get_hotel_info_by_id(id: int, db: Session = Depends(get_db)):
     return hotel.get_hotel_info( id=id, db=db)
 
 
-@router.get("/hotels/")
+@router.get("/")
 def get_all_hotels( 
     city_id: int = None,
     is_popular: bool = None,
@@ -57,7 +57,7 @@ def get_all_hotels(
     
     results = []
     for hotel_dest in hotels:
-        hotel_info = hotel.get_hotel_info(db=db, id = hotel_dest.id)
+        hotel_info = hotel.get_hotel_info(db=db, id = hotel_dest.hotel.id)
         results.append(hotel_info)
     
     return results

@@ -5,7 +5,7 @@ from fastapi import APIRouter, Body, HTTPException, Path, Query, UploadFile
 from .. import database, schemas, models
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, status
-from ..repository import restaurant
+from ..repository import restaurant, destination
 
 router = APIRouter(
     prefix="/restaurant",
@@ -16,30 +16,48 @@ get_db = database.get_db
 
 
 
-@router.post("/restaurant/{destination_id}", 
-             response_model=schemas.ShowRestaurant, 
-             summary="Tạo nhà hàng mới",
-             description="Tạo một nhà hàng mới cho một điểm đến cụ thể dựa trên destination_id.",
-             response_description="Thông tin về nhà hàng vừa được tạo.")
-def create_destination_by_cityID(
-    request: schemas.Restaurant = Body(..., description="Thông tin nhà hàng cần tạo."),
-    destination_id: int = Path(..., description="ID của điểm đến mà nhà hàng sẽ được gán vào."),
-    db: Session = Depends(get_db)
-):
-    return restaurant.create_restaurant_info_by_destinationID(request=request, destination_id=destination_id, db=db)
+@router.post("/{destination_id}", response_model=schemas.ShowRestaurant)
+def create_by_destinationID(request: schemas.Restaurant, destination_id: int, db: Session = Depends(get_db)):
+    return restaurant.create_by_destinationID(request=request, destination_id=destination_id, db=db)
 
 
-@router.put("/restaurant/{restaurant_id}", response_model=schemas.ShowRestaurant)
-def update_restaurant_info_by_id(request: schemas.Restaurant, restaurant_id: int, db: Session = Depends(get_db)):
-    return restaurant.update_restaurant_info_by_id(request=request, id=restaurant_id, db=db)
-@router.get("/restaurants/")
+@router.put("/{id}", response_model=schemas.ShowRestaurant)
+def update_restaurant_info_by_id(request: schemas.Restaurant, id: int, db: Session = Depends(get_db)):
+    return restaurant.update_restaurant_info_by_id(request=request, id=id, db=db)
+
+@router.delete("/{id}")
+def update_restaurant_info_by_id(id: int, db: Session = Depends(get_db)):
+    return restaurant.delete_by_id(id=id, db=db)
+
+@router.get("/{id}")
+def get_restaurant_info_by_id(id: int, db: Session = Depends(get_db)):
+    return restaurant.get_restaurant_info( id=id, db=db)
+
+
+@router.get("/")
 def get_all_restaurants( 
+    city_id: int = None,
+    is_popular: bool = None,
+    
     db: Session = Depends(get_db),
-    cuisines: list[str] = Query(default=[], alias='cuisines'),
+    special_diets: list[str] = Query(default=[], alias='special_diets'
+                                   , description="Danh sách các khoảng giá (ví dụ: 'vege')"),
+    cuisines: list[str] = Query(default=[], alias='cuisines'
+                                , description="Danh sách các khoảng giá (ví dụ: 'Vietnam', 'ThaiLand', 'Indo')"),
 ):
-    return restaurant.filter_restaurant(db, cuisines=cuisines) 
-
-@router.get("/restaurant/{restaurant_id}")
-def get_restaurant_info_by_id(restaurant_id: int, db: Session = Depends(get_db)):
-    return restaurant.get_destination_info( restaurant_id=restaurant_id, db=db)
-
+    
+    restaurants = restaurant.get_all_restaurant(db, city_id)
+    if any([special_diets, cuisines]):
+        restaurants = restaurant.filter_restaurant(restaurants = restaurants, db=db, cuisines=cuisines, special_diets=special_diets) 
+    
+    if is_popular == True:
+        restaurants = destination.sorting_by_ratings_and_quantity_of_reviews(db=db, destinations=restaurants)
+    
+    results = []                                                     
+    for restaurant_dest in restaurants:
+        restaurant_info = restaurant.get_restaurant_info(db=db, id = restaurant_dest.restaurant.id)
+        results.append(restaurant_info)
+    
+    return results
+    
+    

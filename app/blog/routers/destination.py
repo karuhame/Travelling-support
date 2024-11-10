@@ -107,7 +107,6 @@ async def update_destination_by_id(
     return schemas.ShowDestination.from_orm(new_dest)
 
 @router.get("/{id}")
-@router.get("/")
 def get_destination_by_id(
     id: int = None,    
     db: Session = Depends(get_db)

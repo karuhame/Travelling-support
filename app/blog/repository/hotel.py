@@ -36,7 +36,7 @@ def create_by_destinationID(destination_id: int, request:schemas.Hotel, db: Sess
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail=f"Error deleting destination: {str(e)}")
+                            detail=f"Error create destination: {str(e)}")
 def create_hotel_of_destination(destination: models.Destination, request:schemas.Hotel, db: Session):
     try:
         new_hotel = models.Hotel(
@@ -85,18 +85,31 @@ def update_hotel_info_by_id(id:int, request: schemas.Hotel, db: Session):
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail=f"Error updating destination: {str(e)}")
-        
+                            detail=f"Error updating destination: {str(e.detail)}")
+
+def delete_by_id(id: int, db: Session):
+    try:
+        hotel = db.query(models.Hotel).filter(models.Hotel.id == id).first()  # Chờ truy vấn
+        if not hotel:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                detail=f"hotel with the id {id} is not available")
+
+        db.delete(hotel)  # Chờ xóa đối tượng
+        db.commit()  # Chờ hoàn tất việc commit
+        return {"detail": "hotel deleted successfully"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail=f"Error deleting hotel: {str(e.detail)}")
+
+
+ 
 def filter_hotel(hotels: list[models.Destination], db: Session, price_range = [str], amenities = [str], hotel_star = [int]):
-    
-    # Chuyển đổi hotel_star thành danh sách số nguyên nếu cần
-    hotel_star = [int(star) for star in hotel_star]
+        
     # Lọc khách sạn theo các tiêu chí
     filtered_hotels = []
 
     for dest in hotels:
-        print(dest.price_top)
-        hotel = dest.hotel
         # Kiểm tra điều kiện cho amenities
         if amenities:
             amenities_list = [amenity.strip().lower() for amenity in hotel.property_amenities.split(',')]
@@ -182,18 +195,3 @@ def get_all_hotel(db: Session, city_id: int = None):
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 # property_amenities = Column(String(255), default='Free Parking, Pool, Free breakfast')
-
-def delete_by_id(id: int, db: Session):
-    try:
-        hotel = db.query(models.Hotel).filter(models.Hotel.id == id).first()  # Chờ truy vấn
-        if not hotel:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                                detail=f"hotel with the id {id} is not available")
-
-        db.delete(hotel)  # Chờ xóa đối tượng
-        db.commit()  # Chờ hoàn tất việc commit
-        return {"detail": "hotel deleted successfully"}
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail=f"Error deleting hotel: {str(e)}")
