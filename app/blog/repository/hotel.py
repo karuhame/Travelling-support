@@ -110,6 +110,7 @@ def filter_hotel(hotels: list[models.Destination], db: Session, price_range = [s
     filtered_hotels = []
 
     for dest in hotels:
+        hotel = dest.hotel
         # Kiểm tra điều kiện cho amenities
         if amenities:
             amenities_list = [amenity.strip().lower() for amenity in hotel.property_amenities.split(',')]

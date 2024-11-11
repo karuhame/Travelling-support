@@ -73,7 +73,6 @@ class Destination(Base):
     
     # Relationship
     user = relationship("User", back_populates="destinations")
-    tags = relationship("Tag", back_populates="destinations")
     reviews = relationship("Review", back_populates="destination")
     images = relationship("Image", back_populates="destination")
     
@@ -83,7 +82,7 @@ class Destination(Base):
     # destination_journeys = relationship("DestinationJourney", back_populates="destination")  
     tours = relationship("Tour",secondary="destination_tour", back_populates="destinations")
     journeys = relationship("Journey",secondary="destination_journey", back_populates="destinations")
-
+    tags = relationship("Tag", secondary="destination_tag", back_populates="destinations")
 class Image(Base):
     __tablename__ = 'image'
     
@@ -192,14 +191,23 @@ class DestinationTour(Base):
     
     tour_id = Column(Integer, ForeignKey('tour.id', ondelete='CASCADE'))
     destination_id = Column(Integer, ForeignKey('destination.id', ondelete='CASCADE'))
+
+class DestinationTag(Base):
+        
+    __tablename__ = 'destination_tag' 
+    
+    id = Column(Integer, primary_key=True, index=True)
+    
+    tag_id = Column(Integer, ForeignKey('tag.id', ondelete='CASCADE'))
+    destination_id = Column(Integer, ForeignKey('destination.id', ondelete='CASCADE'))
+    
 class Tag(Base):
     __tablename__ = 'tag'
     
-    id = Column(Integer, primary_key=True, index=True)  # Thêm trường id cho tag
-    destination_id = Column(Integer, ForeignKey('destination.id', ondelete='CASCADE'))
-    tag_type = Column(String(50), default='General')  
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(50), default='General')  
     
-    destinations = relationship("Destination", back_populates="tags")  
+    destinations = relationship("Destination", secondary="destination_tag", back_populates="tags") 
 
 class Journey(Base):
     __tablename__ = 'journey' 

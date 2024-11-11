@@ -224,3 +224,12 @@ class ShowTour(BaseModel):
     
     class Config():
         orm_mode = True
+
+class Tag(BaseModel):
+    name: str
+    
+class ShowTag(Tag):
+    id: int
+    
+    class Config():
+        orm_mode = True

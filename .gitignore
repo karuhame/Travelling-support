@@ -6,3 +6,7 @@ __pycache__/
 node_modules/
 
 .env
+
+app/travel-image/*
+app/alembic/
+app/alembic.ini
