@@ -254,13 +254,56 @@ async def add_images_to_destination(db: Session, images: list[UploadFile], desti
             db.rollback()
             print(f"Could not process image {img_file_name}: {e}")
     
-    return {"status": "success", "destination_id": destination_id}
+    return {"status": "success", "destinationRestaurant_id": destination_id}
+        
+def get_popular_destinations_by_city_ID(city_id: int, db: Session):
+    # Truy vấn để lấy danh sách các điểm đến phổ biến
+    popular_destinations = (
+        db.query(models.Destination)
+        .outerjoin(models.Review, models.Destination.id == models.Review.destination_id)  # Kết hợp với bảng Review
+        .filter(models.Destination.address.has(city_id=city_id))  # Lọc theo city_id
+        .group_by(models.Destination.id)  # Nhóm theo id của Destination
+        .having(func.avg(models.Review.rating) >= 4.5)  # Điều kiện xếp hạng
+        .having(func.count(models.Review.id) >= 1000)  # Điều kiện số lượng đánh giá
+        .all()
+    )
 
-def get_destination_info(db:Session, restaurant_id: int):
+    # Tạo danh sách chứa thông tin các điểm đến
+    destination_list = []
+    for destination in popular_destinations:
+        # Lấy thông tin địa chỉ
+        address = destination.address
+        location = f"{address.street}, {address.district}, {address.city.name}, Vietnam" if address else "Unknown Location"
+
+        # Lấy tất cả hình ảnh liên quan đến điểm đến
+        images = db.query(models.Image).filter(models.Image.destination_id == destination.id).limit(5).all()  # Lấy tối đa 5 hình ảnh
+        image_urls = [image.url for image in images]
+
+        # Tính tổng số lượng đánh giá
+        num_of_reviews = len(destination.reviews)
+
+        # Tạo từ điển với thông tin điểm đến
+        destination_info = {
+            "id": destination.id,
+            "name": destination.name,
+            "category": "popular",
+            "image": image_urls,
+            "location": location,
+            "review": num_of_reviews,
+            "price": destination.price_bottom,  
+
+            "description": destination.description,  
+            "rate": func.avg(models.Review.rating)  
+        }
+
+        destination_list.append(destination_info)
+
+    return destination_list
+
+def search_by_name(db: Session,text : str):
     try:
-        restaurant = db.query(models.Restaurant).filter(models.Restaurant.id == restaurant_id).first()
-        return restaurant
+        dest = db.query(models.Destination).filter(models.Destination.name.ilike(f"%{text}%")).all()
+        return dest
     except Exception as e:
         db.rollback()
         print(f"Error detail: {e}")
-    

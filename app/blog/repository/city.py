@@ -66,3 +66,11 @@ def delete_city_by_id(id: int, db: Session):
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to delete city info")
+
+def search_by_name(db: Session, text: str):
+    try:
+        city = db.query(models.City).filter(models.City.name.ilike(f"%{text}%")).all()
+        return city
+    except Exception as e:
+        db.rollback()
+        print(f"Error detail: {e}")
