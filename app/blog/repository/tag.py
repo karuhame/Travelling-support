@@ -61,3 +61,18 @@ def delete_tag(id: int, db: Session):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=f"Error deleting tag: {str(e.detail)}")
+        
+def add_tag_to_destination(tag_id: int, dest_id: int, db: Session):
+    try:
+        # Tạo một đối tượng mới cho mối quan hệ giữa Destination và Tag
+        destination_tag = models.DestinationTag(destination_id=dest_id, tag_id=tag_id)
+        
+        # Thêm vào cơ sở dữ liệu
+        db.add(destination_tag)
+        db.commit()  # Lưu thay đổi
+        db.refresh(destination_tag)
+        print(destination_tag.id)
+        return destination_tag
+    except Exception as e:
+        db.rollback()  # Hoàn tác nếu có lỗi khác
+        raise ValueError(str(e.detail))

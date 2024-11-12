@@ -139,17 +139,7 @@ class ShowHotel(Hotel):
     id: int
     class Config():
         orm_mode = True
-class ShowDestination(Destination):
-    id: int
-    hotel_id: Optional[int] = None
-    restaurant_id: Optional[int] = None
-    hotel: Optional[ShowHotel] = None
-    restaurant: Optional[ShowRestaurant] = None
-    images: Optional[List[ShowImage]]
-    address : Optional[ShowAddress]= None
-    
-    class Config():
-        orm_mode = True
+
         
 class Review(BaseModel):
     title :str 
@@ -226,10 +216,24 @@ class ShowTour(BaseModel):
         orm_mode = True
 
 class Tag(BaseModel):
-    name: str
+    name: Optional[str]
     
 class ShowTag(Tag):
+    id: Optional[int]
+    
+    class Config():
+        orm_mode = True
+        
+class ShowDestination(Destination):
     id: int
+    tags: Optional[List[ShowTag]] = None
+    address : Optional[ShowAddress]= None
+    images: Optional[List[ShowImage]]
+    hotel_id: Optional[int] = None
+    hotel: Optional[ShowHotel] = None
+    restaurant_id: Optional[int] = None
+    restaurant: Optional[ShowRestaurant] = None
+    
     
     class Config():
         orm_mode = True

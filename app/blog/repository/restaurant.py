@@ -116,7 +116,7 @@ def filter_restaurant(restaurants: list[models.Destination], db: Session,  cuisi
 
    
 def get_restaurant_info(id: int, db: Session):
-    
+    print(id)
     dest = db.query(models.Destination).filter(models.Destination.restaurant_id == id).first()
     if not dest:
         return {"error": "Destination not found"}

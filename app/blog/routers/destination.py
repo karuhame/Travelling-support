@@ -13,6 +13,25 @@ router = APIRouter(
 
 get_db = database.get_db
 
+@router.get("/by_tags")
+def get_by_tag_lists(
+    tag_ids: list[int] = Query([], description="List of tag IDs"),
+    db: Session = Depends(get_db)
+):
+    dests = destination.get_by_tags(db=db, tag_ids = tag_ids)
+    
+    final_results = []
+    for dest in dests:
+        result = schemas.ShowDestination.from_orm(dest).dict()
+        rating_info = destination.get_ratings_and_reviews_number_of_destinationID(dest.id, db)
+        result.update({
+            "rating": rating_info["ratings"],
+            "numOfReviews": rating_info["numberOfReviews"]
+        })
+        final_results.append(result)
+
+    return final_results
+
 @router.post("/",
              )
 async def create_destination(

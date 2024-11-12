@@ -14,6 +14,10 @@ router = APIRouter(
 get_db = database.get_db
 
 
+@router.post("/add_to_destination")
+def add_tag_to_destination(tag_id: int, dest_id: int,  db: Session = Depends(get_db)):
+    return tag.add_tag_to_destination(db=db, tag_id=tag_id, dest_id=dest_id)
+    
 
 @router.post("/", response_model=schemas.ShowTag)
 def create_tag(request: schemas.Tag, db: Session = Depends(get_db)):
@@ -34,3 +38,4 @@ def update_tag(id: int, request: schemas.Tag, db: Session = Depends(get_db)):
 @router.delete("/{id}")
 def delete_tag(id: int, db: Session = Depends(get_db)):
     return tag.delete_tag(id, db)
+

@@ -307,3 +307,14 @@ def search_by_name(db: Session,text : str):
     except Exception as e:
         db.rollback()
         print(f"Error detail: {e}")
+        
+        
+
+def get_by_tags(db:Session, tag_ids = list[int]):
+    try: 
+        dests = db.query(models.Destination).join(models.DestinationTag).filter(models.DestinationTag.tag_id.in_(tag_ids)).all()
+        return dests
+    except Exception as e:
+        # Bắt các lỗi khác
+        print(f"An error occurred: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
