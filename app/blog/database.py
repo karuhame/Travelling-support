@@ -64,6 +64,8 @@ def create_sample_data():
     db = next(get_db())
     
     try:
+        imageHandler = ImageHandler()
+
         # Kiểm tra xem có người dùng nào trong cơ sở dữ liệu không
         existing_users = db.execute(select(models.User)).scalars().all()
         if not existing_users:  # Nếu không có người dùng nào
@@ -122,8 +124,8 @@ def create_sample_data():
                 db.refresh(city)
                 
                 # crawl data cho city
-                # ImageHandler.crawl_image(db=db, city= city)
-                # image.crawl_image(db=db, city=city )
+                ImageHandler.crawl_image(db=db, city= city)
+                imageHandler.crawl_image(db=db, city=city )
                 
                 # Thêm 1 điểm đến cho mỗi user
                 for j in range(2):
@@ -153,8 +155,7 @@ def create_sample_data():
                     db.commit()
                     db.refresh(destination)
                     
-                    # imageHandler = ImageHandler()
-                    # imageHandler.fake_db_destination(db, destination=destination)
+                    imageHandler.fake_db_destination(db, destination=destination)
                     
                     hotel = models.Hotel(
                         property_amenities='Free WiFi, Pool, Gym',
@@ -189,7 +190,7 @@ def create_sample_data():
                         db.add(review)
                         db.commit()
                         db.refresh(review)
-                        # imageHandler.fake_db_review(db, review=review)
+                        imageHandler.fake_db_review(db, review=review)
                         
                     
             db.commit()

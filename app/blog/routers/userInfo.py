@@ -23,6 +23,7 @@ async def create_user_info_by_userid(
     ward: str = None,
     city_id: int = None,
     image_inp: Optional[UploadFile] = File(None),  
+    
     db: Session = Depends(get_db),
     current_user: schemas.User = Depends(oauth2.get_current_user)
 ):

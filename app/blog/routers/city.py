@@ -1,9 +1,9 @@
-from typing import List
-from fastapi import APIRouter
+from typing import List, Optional
+from fastapi import APIRouter, Body, UploadFile
 from .. import database, schemas, models
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, status
-from ..repository import city
+from ..repository import city, image
 
 router = APIRouter(
     prefix="/city",
@@ -14,8 +14,26 @@ get_db = database.get_db
 
 
 @router.post("/", response_model=schemas.ShowCity)
-def create_city(request: schemas.City, db: Session = Depends(get_db)):
-    return city.create_city(request, db)
+async def create_city(
+    name: str,
+    description: str,
+    images: Optional[List[UploadFile]] = [],
+    db: Session = Depends(get_db)
+):
+    
+    request = schemas.City(
+        name=  name,
+        description=  description
+    )
+    
+    new_city = city.create_city(request, db)
+    for img in images:
+        sc_image = schemas.Image(
+            city_id = new_city.id
+        )
+        await image.create_image(db, request=sc_image, image=img)
+    return new_city
+    
 
 @router.get("/{id}")
 def get_city_by_id(id: int, db: Session = Depends(get_db)):
@@ -23,15 +41,40 @@ def get_city_by_id(id: int, db: Session = Depends(get_db)):
     return schemas.ShowCity.from_orm(result)
 @router.get("/", response_model=List[schemas.ShowCity])
 def get_all_city(db: Session = Depends(get_db)):
-    print("hi")
     cities = city.get_all_city(db)
     return [schemas.ShowCity.from_orm(city) for city in cities]
 
 
 @router.put("/{id}", response_model=schemas.ShowCity)
-def update_city_by_id(id: int, request: schemas.City, db: Session = Depends(get_db)):
-    return city.update_city_by_id(id, request, db)
+async def update_city_by_id(
+    id: int,
+    name: str,
+    description: str,
+
+    new_images: Optional[List[UploadFile]] = [],  # Ảnh mới
+    image_ids_to_remove: Optional[List[int]] = Body([]),  # Danh sách ID ảnh cần xóa
+    
+    db: Session = Depends(get_db)):
+    
+    request = schemas.City(
+        name=  name,
+        description=  description
+    )
+    new_city =  city.update_city_by_id(id=id, request=request, db=db)
+
+    #delete images_to_remove
+    for img_id in image_ids_to_remove:
+        await image.delete_image(db=db,id=img_id )
+        
+    #add new images
+    for img in new_images:
+        sc_image = schemas.Image(
+            city_id = new_city.id
+        )
+        await image.create_image(db, request=sc_image, image=img)
+    
+    return new_city
 
 @router.delete("/{id}")
-def delete_city_by_id(id: int, db: Session = Depends(get_db)):
-    return city.delete_city_by_id(id, db)
+async def delete_city_by_id(id: int, db: Session = Depends(get_db)):
+    return await city.delete_city_by_id(id, db)

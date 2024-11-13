@@ -231,11 +231,11 @@ class ImageHandler:
 
                 # Tải lên hình ảnh lên Azure
                 img_file_name = img_file_path  # Đường dẫn file hình ảnh
-                blob_name = f"destinations/{destination.id}/{img.id}.png"  # Tên blob
+                blob_name = f"destinations/{img.id}.png"  # Tên blob
                 self.upload_to_azure(img_file_name, blob_name)  # Tải lên Azure
 
                 # Lấy URL hình ảnh từ Azure
-                url = self.get_image_url(blob_name_prefix=f"destinations/{destination.id}", img_file_name=f"{img.id}.png")
+                url = self.get_image_url(blob_name_prefix=f"destinations/", img_file_name=f"{img.id}.png")
                 
                 # Gán URL cho đối tượng hình ảnh
                 img.url = url
@@ -263,11 +263,11 @@ class ImageHandler:
 
                 # Tải lên hình ảnh lên Azure
                 img_file_name = img_file_path  # Đường dẫn file hình ảnh
-                blob_name = f"reviews/{review.id}/{img.id}.png"  # Tên blob
+                blob_name = f"reviews/{img.id}.png"  # Tên blob
                 self.upload_to_azure(img_file_name, blob_name)  # Tải lên Azure
 
                 # Lấy URL hình ảnh từ Azure
-                url = self.get_image_url(blob_name_prefix=f"reviews/{review.id}", img_file_name=f"{img.id}.png")
+                url = self.get_image_url(blob_name_prefix=f"reviews/", img_file_name=f"{img.id}.png")
                 
                 # Gán URL cho đối tượng hình ảnh
                 img.url = url

@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from blog import models, schemas
 from fastapi import HTTPException, status
 from blog.hashing import Hash
+from blog.repository import image
 
 def create_city(request: schemas.City, db: Session):
     try:
@@ -54,9 +55,11 @@ def update_city_by_id(id: int, request: schemas.City, db: Session):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to update city info")
 
 
-def delete_city_by_id(id: int, db: Session):
+async def delete_city_by_id(id: int, db: Session):
     try:
         city = db.query(models.City).filter(models.City.id == id).first()  # Chờ truy vấn
+        for img in city.images:
+            await image.delete_image(db=db, id=img.id)
         if not city:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                                 detail=f"City with the id {id} is not available")

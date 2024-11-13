@@ -23,7 +23,7 @@ async def create_by_userId_destinationId(
     user_id: int,
     destination_id: int, 
     date_create: date = date.today(),
-    images: list[UploadFile] = None,
+    images: list[UploadFile] = [],
     db: Session = Depends(get_db)):
     
     sh_review= schemas.Review(
@@ -44,7 +44,7 @@ async def create_by_userId_destinationId(
 @router.put("/{id}", response_model=schemas.ShowReview)
 async def update_review_by_id(
     id: int,
-    new_images: Optional[List[UploadFile]] = None,  # Ảnh mới
+    new_images: Optional[List[UploadFile]] = [],  # Ảnh mới
     image_ids_to_remove: Optional[List[int]] = Body([]),  # Danh sách ID ảnh cần xóa
 
     title :str = None,
@@ -87,6 +87,7 @@ def get_by_id(
 ):
     rv = review.get_by_id(review_id, db)
     return schemas.ShowReview.from_orm(rv)
+
 @router.get("/", 
             description= "Fill destination_id : get all review about 1 destination; Fill both user_id and destination_id: get all review of 1 user about 1 destination")
 def get_reviews(

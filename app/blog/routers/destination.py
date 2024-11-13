@@ -35,7 +35,7 @@ def get_by_tag_lists(
 @router.post("/",
              )
 async def create_destination(
-    images: Optional[List[UploadFile]] = None,
+    images: Optional[List[UploadFile]] = [],
     
     name: str = None,
     price_bottom: int = None,
@@ -88,7 +88,7 @@ async def create_destination(
 @router.put("/{id}", response_model=schemas.ShowDestination)
 async def update_destination_by_id(
     id: int,
-    new_images: Optional[List[UploadFile]] = None,  # Ảnh mới
+    new_images: Optional[List[UploadFile]] = [],  # Ảnh mới
     image_ids_to_remove: Optional[List[int]] = Body([]),  # Danh sách ID ảnh cần xóa
     
     name: str = None,
@@ -108,7 +108,6 @@ async def update_destination_by_id(
     db: Session = Depends(get_db),
     
 ):
-    print(image_ids_to_remove)
     address = schemas.Address(
         district=district,
         street=street,
