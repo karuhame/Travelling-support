@@ -1,3 +1,4 @@
+from tempfile import SpooledTemporaryFile
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, UploadFile, status
 
@@ -16,6 +17,7 @@ from selenium.webdriver.chrome.options import Options
 from bs4 import BeautifulSoup
 
 from blog import models
+from blog import schemas
 
 import os
 from dotenv import load_dotenv
@@ -163,56 +165,61 @@ class ImageHandler:
         return file_location  # Trả về đường dẫn tệp hoặc URL
 
     @staticmethod
-    def crawl_image(db: Session, city = None, destination = None):
+    async def crawl_image(db: Session, city = None, destination = None):
             
         # from app.blog import models
+        from blog.repository import image
+
         
         google_crawler = ImageHandler()
         if city:
             obj = city
             
-            download_links = google_crawler.crawl(keyword=f'Du lịch {obj.name}', max_num=3)
             
-            for img_link in download_links:
-                img = models.Image(
-                    city_id = obj.id
+            
+            download_imgs = google_crawler.crawl(keyword=f'Du lịch {obj.name}', max_num=3)
+            
+            for img_link in download_imgs:
+                img_file_name = google_crawler.download_url(img_url=img_link, file_name="download1.png")
+
+                # Đọc tệp hình ảnh từ máy
+                with open(img_file_name, "rb") as img_file:
+                    img_data = img_file.read()  # Đọc nội dung tệp
+
+                # Tạo một SpooledTemporaryFile
+                temp_file = SpooledTemporaryFile()
+                temp_file.write(img_data)
+                temp_file.seek(0)  # Đặt lại vị trí con trỏ về đầu tệp
+
+                # Tạo một đối tượng UploadFile từ SpooledTemporaryFile
+                upload_file = UploadFile(
+                    filename="download1.png",
+                    file=temp_file
                 )
-                db.add(img)
-                db.commit()
-                db.refresh(img)
-                # import pdb; pdb.set_trace()
-                img_file_name = google_crawler.download_url(img_url=img_link, file_name=f"cities/{obj.id}/{img.id}.png")
-                google_crawler.upload_to_azure(img_file_name, blob_name_prefix=f"cities/{obj.id}/{img.id}.png" )
-                url = google_crawler.get_image_url(blob_name_prefix=f"cities/{obj.id}", img_file_name=f"{img.id}.png")
+
+                sc_image = schemas.Image(
+                    city_id=obj.id
+                )
                 
-                img.url = url
-                db.add(img)
-                db.commit()
-                db.refresh(img)
+                # Gọi hàm create_image với đối tượng UploadFile
+                await image.create_image(db, request=sc_image, image=upload_file)
+    
         else:
             obj = destination
             
             download_imgs = google_crawler.crawl(keyword=f'Du lịch {obj.name}', max_num=3)
             
             for img_link in download_imgs:
-                img = models.Image(
+                
+                img_file_name = google_crawler.download_url(img_url=img_link, file_name=f"download.png")
+
+                sc_image = schemas.Image(
                     destination_id = obj.id
                 )
-                db.add(img)
-                db.commit()
-                db.refresh(img)
-                
-                img_file_name = google_crawler.download_url(img_url=img_link, file_name=f"destinations/{obj.id}/{img.id}.png")
-                google_crawler.upload_to_azure(img_file_name, blob_name_prefix=f"destinations/{obj.id}/{img.id}.png" )
-                url = google_crawler.get_image_url(blob_name_prefix=f"destinations/{obj.id}", img_file_name=f"{img.id}.png")
-                
-                img.url = url
-                db.add(img)
-                db.commit()
-                db.refresh(img)
+                await image.create_image(db, request=sc_image, image=img_file_name)
         
     
-    def fake_db_destination(self, db: Session, destination=None, fake_dir ="travel-image/destinations/fake/"):
+    async def fake_db_destination(self, db: Session, destination=None, fake_dir ="travel-image/destinations/fake/"):
         from blog import models
         import glob
 
@@ -232,7 +239,7 @@ class ImageHandler:
                 # Tải lên hình ảnh lên Azure
                 img_file_name = img_file_path  # Đường dẫn file hình ảnh
                 blob_name = f"destinations/{img.id}.png"  # Tên blob
-                self.upload_to_azure(img_file_name, blob_name)  # Tải lên Azure
+                await self.upload_to_azure(img_file_name, blob_name)  # Tải lên Azure
 
                 # Lấy URL hình ảnh từ Azure
                 url = self.get_image_url(blob_name_prefix=f"destinations/", img_file_name=f"{img.id}.png")
@@ -244,7 +251,7 @@ class ImageHandler:
                 db.refresh(img)  # Làm mới đối tượng
             except Exception as e:
                 print(f"Could not process image {img_file_path}: {e}")
-    def fake_db_review(self, db: Session, review=None, fake_dir ="travel-image/destinations/fake/"):
+    async def fake_db_review(self, db: Session, review=None, fake_dir ="travel-image/destinations/fake/"):
        
         import glob
 
@@ -264,7 +271,7 @@ class ImageHandler:
                 # Tải lên hình ảnh lên Azure
                 img_file_name = img_file_path  # Đường dẫn file hình ảnh
                 blob_name = f"reviews/{img.id}.png"  # Tên blob
-                self.upload_to_azure(img_file_name, blob_name)  # Tải lên Azure
+                await self.upload_to_azure(img_file_name, blob_name)  # Tải lên Azure
 
                 # Lấy URL hình ảnh từ Azure
                 url = self.get_image_url(blob_name_prefix=f"reviews/", img_file_name=f"{img.id}.png")

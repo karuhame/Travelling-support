@@ -58,7 +58,7 @@ def get_db():
 def delete_all(engine):
     pass
 
-def create_sample_data():
+async def create_sample_data():
 
     # Lấy phiên làm việc với cơ sở dữ liệu
     db = next(get_db())
@@ -124,8 +124,8 @@ def create_sample_data():
                 db.refresh(city)
                 
                 # crawl data cho city
-                ImageHandler.crawl_image(db=db, city= city)
-                imageHandler.crawl_image(db=db, city=city )
+                await ImageHandler.crawl_image(db=db, city= city)
+                # imageHandler.crawl_image(db=db, city=city )
                 
                 # Thêm 1 điểm đến cho mỗi user
                 for j in range(2):
@@ -155,7 +155,7 @@ def create_sample_data():
                     db.commit()
                     db.refresh(destination)
                     
-                    imageHandler.fake_db_destination(db, destination=destination)
+                    # await imageHandler.fake_db_destination(db, destination=destination)
                     
                     hotel = models.Hotel(
                         property_amenities='Free WiFi, Pool, Gym',
@@ -190,7 +190,7 @@ def create_sample_data():
                         db.add(review)
                         db.commit()
                         db.refresh(review)
-                        imageHandler.fake_db_review(db, review=review)
+                        # await imageHandler.fake_db_review(db, review=review)
                         
                     
             db.commit()

@@ -30,7 +30,6 @@ async def create_image(db: Session, request: schemas.Image, image: UploadFile):
         db.add(db_image)
         db.commit()
         db.refresh(db_image)
-
         # Tải ảnh lên Azure Blob Storage
         img_file_name = ImageHandler.save_image(image=image, file_location=f"travel-image/download.png")
         db_image.blob_name = blob_name_prefix + f"/{db_image.id}.png"
