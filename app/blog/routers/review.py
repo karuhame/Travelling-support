@@ -79,16 +79,21 @@ async def update_review_by_id(
 async def delete_review_by_id(id: int, db: Session = Depends(get_db)):
     return await review.delete_by_id(id, db)
 
-@router.get("/")
-def get_reviews(
+
+@router.get("/{id}")
+def get_by_id(
     review_id: int = None,
+    db: Session = Depends(get_db)
+):
+    rv = review.get_by_id(review_id, db)
+    return schemas.ShowReview.from_orm(rv)
+@router.get("/", 
+            description= "Fill destination_id : get all review about 1 destination; Fill both user_id and destination_id: get all review of 1 user about 1 destination")
+def get_reviews(
     destination_id: int = None,
     user_id: int = None,
     db: Session = Depends(get_db)
 ):
-    if review_id:
-        rv = review.get_by_id(review_id, db)
-        return schemas.ShowReview.from_orm(rv)
 
     if destination_id:
         if user_id:
@@ -98,5 +103,5 @@ def get_reviews(
         
         return [schemas.ShowReview.from_orm(rv).dict() for rv in reviews]
 
-    raise HTTPException(status_code=400, detail="You must provide either review_id, destination_id, or both user_id and destination_id.")
+    raise HTTPException(status_code=400, detail="You must provide destination_id, or both user_id and destination_id.")
 
