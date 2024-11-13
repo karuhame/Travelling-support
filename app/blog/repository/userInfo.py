@@ -4,6 +4,7 @@ from blog import models, schemas
 from fastapi import HTTPException, UploadFile, status
 from blog.hashing import Hash
 from blog.repository.image_handler import ImageHandler
+from blog.repository import image
 
 async def add_default_avatar(db: Session, userInfo_id: int):
     imageHandler = ImageHandler()
@@ -27,79 +28,26 @@ async def add_default_avatar(db: Session, userInfo_id: int):
             detail=f"Failed to add default avatar: {str(e.detail)}"
         )
 
-async def add_image_to_userInfo(db: Session, image: UploadFile, userInfo_id: int):
-    imageHandler = ImageHandler()
+async def add_image_to_userInfo(db: Session, image_inp: UploadFile, userInfo_id: int):
 
 
-    img_file_name = ImageHandler.save_image(image=image, file_location=f"travel-image/userInfoes/{userInfo_id}.png")
     try:
-        # Tạo đối tượng Image mới
-        img = models.Image(
-            userInfo_id = userInfo_id
+        sc_image = schemas.Image(
+            city_id= None,
+            destination_id= None,
+            review_id= None,
+            userInfo_id= userInfo_id
         )
-        db.add(img)  # Thêm vào session
-        db.commit()  # Lưu lại để lấy id của image                        
-        db.refresh(img)  # Làm mới đối tượng để lấy id
-
-        # Tải lên hình ảnh lên Azure
-        blob_name = f"userInfoes/{userInfo_id}/{img.id}.png"  # Tên blob
-        await imageHandler.upload_to_azure(img_file_name, blob_name)  # Tải lên Azure
-
-        # Lấy URL hình ảnh từ Azure
-        url = imageHandler.get_image_url(blob_name_prefix=f"userInfoes/{userInfo_id}", img_file_name=f"{img.id}.png")
+        # Thêm hình ảnh vào thông tin người dùng
+        img = await image.create_image(db, sc_image, image=image_inp)
         
-        # Gán URL cho đối tượng hình ảnh
-        img.url = url
-        db.add(img)  # Thêm lại vào session
-        db.commit()  # Lưu lại
-        db.refresh(img)  # Làm mới đối tượng
             
     except Exception as e:
-        print(f"Could not process image {img_file_name}: {str(e)}")
+        print(f"Could not process image {image_inp}: {str(e)}")
+        return False
     
-    return {"status": "success", "userInfo_id": userInfo_id}
+    return True
 
-async def update_image(db: Session, image: UploadFile, userInfo_id: int):
-    imageHandler = ImageHandler()
-
-    # Lưu hình ảnh tạm thời
-    img_file_name = ImageHandler.save_image(image=image, file_location=f"travel-image/userInfoes/{userInfo_id}.png")
-    try:
-        # Tìm user_info theo userInfo_id
-        user_info = db.query(models.UserInfo).filter(models.UserInfo.id == userInfo_id).first()
-        if user_info is None:
-            raise HTTPException(status_code=404, detail="UserInfo not found")
-
-        # Kiểm tra xem user_info đã có image hay chưa
-        if user_info.image is None:
-            # Tạo đối tượng Image mới
-            user_info.image = models.Image(
-                userInfo_id=userInfo_id
-            )
-            db.add(user_info.image)  # Thêm vào session
-            db.commit()  # Lưu lại để lấy id của image                        
-            db.refresh(user_info.image)  # Làm mới đối tượng để lấy id
-
-        # Tải lên hình ảnh lên Azure
-        blob_name = f"userInfoes/{userInfo_id}/{user_info.image.id}.png"  # Tên blob
-        await imageHandler.upload_to_azure(img_file_name, blob_name)  # Tải lên Azure
-
-        # Lấy URL hình ảnh từ Azure
-        url = imageHandler.get_image_url(blob_name_prefix=f"userInfoes/{userInfo_id}", img_file_name=f"{user_info.image.id}.png")
-        
-        print("url:" + url)
-        # Gán URL cho đối tượng hình ảnh
-        user_info.image.url = url
-        
-        # Cập nhật đối tượng image trong cơ sở dữ liệu
-        db.commit()  # Lưu lại thay đổi
-        db.refresh(user_info.image)  # Làm mới đối tượng
-            
-    except Exception as e:
-        print(f"Could not process image {img_file_name}: {e}")
-        raise HTTPException(status_code=500, detail=f"Could not process image: {str(e.detail)}")  # Trả về lỗi nếu có
-
-    return {"status": "success", "userInfo_id": userInfo_id}
 async def delete_image(db: Session, userInfo_id: int):
     imageHandler = ImageHandler()
     
@@ -244,3 +192,4 @@ def delete_user_info(id: int, db: Session):
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to delete user info")
+

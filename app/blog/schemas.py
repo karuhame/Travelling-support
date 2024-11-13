@@ -57,6 +57,8 @@ class SignUp(BaseModel):
 class Image(BaseModel):
     city_id: Optional[int] = None
     destination_id: Optional[int] = None
+    userInfo_id: Optional[int] = None
+    review_id:  Optional[int] = None
     url: Optional[str] = None
     
     class Config():

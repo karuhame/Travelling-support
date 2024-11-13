@@ -50,13 +50,13 @@ app.include_router(image.router)
 
 
 
-@app.on_event("startup")
-def startup_event():
-#     # delete_all(engine=engine)
+# @app.on_event("startup")
+# def startup_event():
+# #     # delete_all(engine=engine)
     
-    models.Base.metadata.drop_all(bind=engine)
-    models.Base.metadata.create_all(engine)
-    create_sample_data() 
+#     models.Base.metadata.drop_all(bind=engine)
+#     models.Base.metadata.create_all(engine)
+#     create_sample_data() 
 
 # if __name__ == "__main__":
 #     import uvicorn

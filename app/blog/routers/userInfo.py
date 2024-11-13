@@ -1,9 +1,9 @@
 from typing import Optional
-from fastapi import APIRouter, File, UploadFile
+from fastapi import APIRouter, File, HTTPException, UploadFile
 from .. import database, schemas, models, oauth2
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, status
-from ..repository import userInfo
+from ..repository import userInfo, image
 
 router = APIRouter(
     prefix="/userInfo",
@@ -22,10 +22,11 @@ async def create_user_info_by_userid(
     street: str,
     ward: str,
     city_id: int,
-    image: Optional[UploadFile] = File(None),  
+    image_inp: Optional[UploadFile] = File(None),  
     db: Session = Depends(get_db),
     current_user: schemas.User = Depends(oauth2.get_current_user)
 ):
+    
     # Tạo đối tượng request từ schema UserInfoBase
     info = schemas.UserInfoBase(
         description=description,
@@ -44,7 +45,7 @@ async def create_user_info_by_userid(
     user_info = userInfo.create_user_info_by_userid(address=address, info=info, user_id=user_id, db=db)
 
     # Thêm hình ảnh vào thông tin người dùng
-    await userInfo.add_image_to_userInfo(db, image, user_info.id)
+    await userInfo.add_image_to_userInfo(db, image_inp, user_info.id)
 
     return schemas.ShowUserInfo.from_orm(user_info)
 
@@ -63,7 +64,7 @@ async def update_user_info(
     street: str,
     ward: str,
     city_id: int,
-    image: Optional[UploadFile] = File(None),  
+    image_inp: Optional[UploadFile] = File(None),  
     db: Session = Depends(get_db),
     current_user: schemas.User = Depends(oauth2.get_current_user)
 ):
@@ -81,9 +82,15 @@ async def update_user_info(
         city_id=city_id,
     )
     
+    sc_image = schemas.Image(
+        userInfo_id= id
+    )
+    
     user_info = userInfo.update_user_info(address=address, info=info, id=id, db=db)
-
-    await userInfo.update_image(db,image=image, userInfo_id=user_info.id)
+    if user_info.image:
+        await image.update_image(db,image_inp=image_inp, id=user_info.image.id)
+    else:
+        await userInfo.add_image_to_userInfo(db, image_inp, user_info.id)
     return schemas.ShowUserInfo.from_orm(user_info)
 @router.delete("/{id}")
 def delete_user_info(id: int, db: Session = Depends(get_db), current_user: schemas.User = Depends(oauth2.get_current_user)):

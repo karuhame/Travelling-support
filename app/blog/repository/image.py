@@ -6,7 +6,7 @@ from blog.repository.image_handler import ImageHandler  # Giả sử bạn đã 
 image_handler = ImageHandler()
 async def create_image(db: Session, request: schemas.Image, image: UploadFile):
     # Kiểm tra ít nhất một ID được cung cấp
-    if not (request.city_id or request.destination_id or request.review_id):
+    if not (request.city_id or request.destination_id or request.review_id or request.userInfo_id):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail="At least one of city_id, destination_id, or review_id must be provided.")
 
@@ -49,7 +49,6 @@ async def create_image(db: Session, request: schemas.Image, image: UploadFile):
 
     return db_image
 
-    return db_image
 
 async def delete_image(db: Session, id: int):
     db_image = db.query(models.Image).filter(models.Image.id == id).first()
@@ -62,3 +61,20 @@ async def delete_image(db: Session, id: int):
         return True
     return False
 
+async def update_image(db: Session, id: int, image_inp : UploadFile):
+    try:
+        print(image_inp)
+        db_image = db.query(models.Image).filter(models.Image.id == id).first()
+
+        # Tải ảnh lên Azure Blob Storage
+        img_file_name = ImageHandler.save_image(image=image_inp, file_location=f"travel-image/download.png")
+        
+        await image_handler.upload_to_azure(img_file_name, blob_name_prefix=db_image.blob_name)  # Tải lên từ URL
+        db.add(db_image)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail=f"Error creating image: {str(e)}")
+
+    return db_image
