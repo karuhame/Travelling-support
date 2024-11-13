@@ -1,3 +1,4 @@
+import asyncio
 from tempfile import SpooledTemporaryFile
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, UploadFile, status
@@ -16,9 +17,6 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from bs4 import BeautifulSoup
 
-from blog import models
-from blog import schemas
-
 import os
 from dotenv import load_dotenv
 
@@ -36,7 +34,25 @@ class ImageHandler:
         if not os.path.exists(self.root_dir):
             os.makedirs(self.root_dir)
         
-
+    async def delete_all_blobs(self):
+        """Xóa tất cả blob trong container."""
+        # Khởi tạo BlobServiceClient
+        self.blob_service_client = BlobServiceClient.from_connection_string(self.connection_string)
+        self.container_client = self.blob_service_client.get_container_client(self.container_name)
+        
+        # Tạo container nếu chưa tồn tại
+        try:
+            await self.container_client.create_container()
+        except Exception as e:
+            print(f"Container '{self.container_name}' already exists or could not be created: {e}")
+            
+        blobs = self.container_client.list_blobs()
+        
+        async for blob in blobs:
+            await self.container_client.delete_blob(blob.name)
+            print(f"Deleted: {blob.name}")
+        print("All blobs have been deleted.")
+        
     def crawl(self, keyword, max_num=5):
         self.chrome_options = Options()
         self.chrome_options.add_argument("--incognito")
@@ -169,6 +185,10 @@ class ImageHandler:
             
         # from app.blog import models
         from blog.repository import image
+                
+        from blog import models
+        from blog import schemas
+
 
         
         google_crawler = ImageHandler()
@@ -252,7 +272,10 @@ class ImageHandler:
             except Exception as e:
                 print(f"Could not process image {img_file_path}: {e}")
     async def fake_db_review(self, db: Session, review=None, fake_dir ="travel-image/destinations/fake/"):
-       
+            
+        from blog import models
+        from blog import schemas
+
         import glob
 
         # Lấy tất cả các file hình ảnh trong fake_dir
@@ -284,9 +307,17 @@ class ImageHandler:
             except Exception as e:
                 print(f"Could not process image {img_file_path}: {e}")
         
+        # Hàm main để chạy mã
+async def main():
+    image_handler = ImageHandler()
+    # await image_handler.delete_all_blobs()
 
 if __name__ == '__main__':
-    image_handler = ImageHandler()
-    # image_handler.upload_to_azure("travel-image/cities/1/1.png", "uploaded_image.png")
-    # image_handler.update_image_azure("travel-image/cities/1/2.png", "uploaded_image.png")
-    image_handler.delete_image_azure("uploaded_image.png")
+    asyncio.run(main())
+
+# if __name__ == '__main__':
+#     image_handler = ImageHandler()
+#     # image_handler.upload_to_azure("travel-image/cities/1/1.png", "uploaded_image.png")
+#     # image_handler.update_image_azure("travel-image/cities/1/2.png", "uploaded_image.png")
+#     # image_handler.delete_image_azure("uploaded_image.png")
+#     image_handler.delete_all_blobs()
