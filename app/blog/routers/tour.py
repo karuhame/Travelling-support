@@ -2,7 +2,7 @@ from typing import List
 from fastapi import APIRouter, File, HTTPException, Query, UploadFile
 from .. import database, schemas, models
 from sqlalchemy.orm import Session
-from ..repository import tour, image
+from ..repository import tour, image_handler
 from fastapi import APIRouter, Depends, status
 
 router = APIRouter(

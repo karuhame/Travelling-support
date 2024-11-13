@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from blog import models, schemas
 from fastapi import HTTPException, UploadFile, status
 from blog.hashing import Hash
-from blog.repository.image import ImageHandler
+from blog.repository.image_handler import ImageHandler
 def create_by_userId_destinationId(user_id: int, destination_id: int,  request: schemas.Review, db: Session):
     try:
         new_review = models.Review(

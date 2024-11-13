@@ -55,18 +55,18 @@ class SignUp(BaseModel):
 
      
 class Image(BaseModel):
-    id: int
     city_id: Optional[int] = None
     destination_id: Optional[int] = None
-    url: str
+    url: Optional[str] = None
     
     class Config():
         orm_mode = True
     
 class ShowImage(BaseModel):
     id: int
-    url: Optional[str]
-    
+    url: Optional[str] = None
+    blob_name: Optional[str] = None
+
     class Config():
         orm_mode = True
 class City(BaseModel):

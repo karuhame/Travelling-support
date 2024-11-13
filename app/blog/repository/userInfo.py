@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from blog import models, schemas
 from fastapi import HTTPException, UploadFile, status
 from blog.hashing import Hash
-from blog.repository.image import ImageHandler
+from blog.repository.image_handler import ImageHandler
 
 async def add_default_avatar(db: Session, userInfo_id: int):
     imageHandler = ImageHandler()

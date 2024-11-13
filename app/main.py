@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from blog import models
 from blog.database import engine, create_sample_data, delete_all
-from blog.routers import blog,tour, user, authentication, userInfo, city, review, destination,authenGoogle, destination, hotel, restaurant, address, dashboard, tag
+from blog.routers import blog,tour, user, authentication, userInfo, city, review, destination,authenGoogle, destination, hotel, restaurant, address, dashboard, tag, image
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -42,19 +42,21 @@ app.include_router(review.router)
 app.include_router(tour.router)
 app.include_router(dashboard.router)
 app.include_router(tag.router)
+app.include_router(image.router)
 
 
 
 
 
 
-# @app.on_event("startup")
-# def startup_event():
-# #     # delete_all(engine=engine)
+
+@app.on_event("startup")
+def startup_event():
+#     # delete_all(engine=engine)
     
-#     models.Base.metadata.drop_all(bind=engine)
-#     models.Base.metadata.create_all(engine)
-#     create_sample_data() 
+    models.Base.metadata.drop_all(bind=engine)
+    models.Base.metadata.create_all(engine)
+    create_sample_data() 
 
 # if __name__ == "__main__":
 #     import uvicorn

@@ -88,6 +88,7 @@ class Image(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     url = Column(String(100), nullable=True)
+    blob_name = Column(String(100), nullable = True)
     
     # Khóa ngoại cho City
     city_id = Column(Integer, ForeignKey('city.id'), nullable=True)

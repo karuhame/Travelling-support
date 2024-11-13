@@ -13,7 +13,7 @@ from fastapi import HTTPException
 from blog import repository
 from blog import models
 from . import schemas  # Import schemas nếu cần
-from blog.repository.image import ImageHandler
+from blog.repository.image_handler import ImageHandler
 # DATABASE_URL=mysql+pymysql://travel_user:password@localhost:3306/db_connect
 # cnx = mysql.connector.connect(user="travel_user", password="{your_password}", host="travel-sql.mysql.database.azure.com", port=3306, database="{your_database}", ssl_ca="{ca-cert filename}", ssl_disabled=False)
 
@@ -122,7 +122,7 @@ def create_sample_data():
                 db.refresh(city)
                 
                 # crawl data cho city
-                ImageHandler.crawl_image(db=db, city= city)
+                # ImageHandler.crawl_image(db=db, city= city)
                 # image.crawl_image(db=db, city=city )
                 
                 # Thêm 1 điểm đến cho mỗi user
@@ -153,8 +153,8 @@ def create_sample_data():
                     db.commit()
                     db.refresh(destination)
                     
-                    imageHandler = ImageHandler()
-                    imageHandler.fake_db_destination(db, destination=destination)
+                    # imageHandler = ImageHandler()
+                    # imageHandler.fake_db_destination(db, destination=destination)
                     
                     hotel = models.Hotel(
                         property_amenities='Free WiFi, Pool, Gym',
@@ -189,7 +189,7 @@ def create_sample_data():
                         db.add(review)
                         db.commit()
                         db.refresh(review)
-                        imageHandler.fake_db_review(db, review=review)
+                        # imageHandler.fake_db_review(db, review=review)
                         
                     
             db.commit()
