@@ -4,7 +4,7 @@ from fastapi import APIRouter, Body, HTTPException, Path, Query, UploadFile
 from .. import database, schemas, models
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, status
-from ..repository import destination
+from ..repository import destination, image
 
 router = APIRouter(
     prefix="/destination",
@@ -75,14 +75,21 @@ async def create_destination(
 
     new_dest = destination.create(sh_destination, db)
     new_dest = destination.create_address_of_destination(db=db, destination=new_dest, address=address)
-    await destination.add_images_to_destination(db, images=images, destination_id=new_dest.id)
+    
+    for img in images:
+        sc_image = schemas.Image(
+            destination_id = new_dest.id
+        )
+        await image.create_image(db, request=sc_image, image=img)
+    
     
     return schemas.ShowDestination.from_orm(new_dest)
 
 @router.put("/{id}", response_model=schemas.ShowDestination)
 async def update_destination_by_id(
     id: int,
-    images: Optional[List[UploadFile]] = None,
+    new_images: Optional[List[UploadFile]] = None,  # Ảnh mới
+    image_ids_to_remove: Optional[List[int]] = Body([]),  # Danh sách ID ảnh cần xóa
     
     name: str = None,
     price_bottom: int = None,
@@ -101,6 +108,7 @@ async def update_destination_by_id(
     db: Session = Depends(get_db),
     
 ):
+    print(image_ids_to_remove)
     address = schemas.Address(
         district=district,
         street=street,
@@ -121,7 +129,18 @@ async def update_destination_by_id(
 
     new_dest = destination.update_by_id(id, sh_destination, db)
     new_dest = destination.create_address_of_destination(db=db, destination=new_dest, address=address)
-    await destination.add_images_to_destination(db, images=images, destination_id=new_dest.id)
+    
+    #delete images_to_remove
+    for id in image_ids_to_remove:
+        await image.delete_image(db=db,id=id )
+        
+    #add new images
+    for img in new_images:
+        sc_image = schemas.Image(
+            destination_id = new_dest.id
+        )
+        await image.create_image(db, request=sc_image, image=img)
+    
     
     return schemas.ShowDestination.from_orm(new_dest)
 
@@ -178,5 +197,5 @@ def get_destination(
 
 
 @router.delete("/{id}")
-def delete_destination_by_id(id: int, db: Session = Depends(get_db)):
-    return destination.delete_by_id(id, db)
+async def delete_destination_by_id(id: int, db: Session = Depends(get_db)):
+    return await destination.delete_by_id(id, db)
