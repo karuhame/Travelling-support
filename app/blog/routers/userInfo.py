@@ -16,12 +16,12 @@ get_db = database.get_db
 @router.post("/")
 async def create_user_info_by_userid(
     user_id: int,
-    description: str,
-    phone_number: str,
-    district: str,
-    street: str,
-    ward: str,
-    city_id: int,
+    description: str = None,
+    phone_number: str = None,
+    district: str = None,
+    street: str = None,
+    ward: str = None,
+    city_id: int = None,
     image_inp: Optional[UploadFile] = File(None),  
     db: Session = Depends(get_db),
     current_user: schemas.User = Depends(oauth2.get_current_user)
@@ -40,13 +40,16 @@ async def create_user_info_by_userid(
         ward=ward,
         city_id=city_id,
     )
-
+    
     # Tạo thông tin người dùng bằng user_id
     user_info = userInfo.create_user_info_by_userid(address=address, info=info, user_id=user_id, db=db)
+    sc_image = schemas.Image(
+        userInfo_id= user_info.id
+    )
 
     # Thêm hình ảnh vào thông tin người dùng
-    await userInfo.add_image_to_userInfo(db, image_inp, user_info.id)
-
+    await image.create_image(db, request=sc_image, image=image_inp)
+    
     return schemas.ShowUserInfo.from_orm(user_info)
 
 @router.get("/{id}")
@@ -57,13 +60,12 @@ def get_user_info(id: int, db: Session = Depends(get_db), current_user: schemas.
 @router.put("/{id}")
 async def update_user_info(
     id: int,
-    user_id: int,
-    description: str,
-    phone_number: str,
-    district: str,
-    street: str,
-    ward: str,
-    city_id: int,
+    description: str = None,
+    phone_number: str = None,
+    district: str = None,
+    street: str = None,
+    ward: str = None,
+    city_id: int = None,
     image_inp: Optional[UploadFile] = File(None),  
     db: Session = Depends(get_db),
     current_user: schemas.User = Depends(oauth2.get_current_user)
@@ -90,11 +92,11 @@ async def update_user_info(
     if user_info.image:
         await image.update_image(db,image_inp=image_inp, id=user_info.image.id)
     else:
-        await userInfo.add_image_to_userInfo(db, image_inp, user_info.id)
+        await image.create_image(db, sc_image, image=image_inp)
     return schemas.ShowUserInfo.from_orm(user_info)
 @router.delete("/{id}")
-def delete_user_info(id: int, db: Session = Depends(get_db), current_user: schemas.User = Depends(oauth2.get_current_user)):
-    return userInfo.delete_user_info(id, db)
+async def delete_user_info(id: int, db: Session = Depends(get_db), current_user: schemas.User = Depends(oauth2.get_current_user)):
+    return  await userInfo.delete_user_info(id, db)
 
 @router.get("/")
 def get_all(db: Session = Depends(get_db), current_user: schemas.User = Depends(oauth2.get_current_user)):

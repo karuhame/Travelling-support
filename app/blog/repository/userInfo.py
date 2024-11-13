@@ -27,50 +27,6 @@ async def add_default_avatar(db: Session, userInfo_id: int):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to add default avatar: {str(e.detail)}"
         )
-
-async def add_image_to_userInfo(db: Session, image_inp: UploadFile, userInfo_id: int):
-
-
-    try:
-        sc_image = schemas.Image(
-            city_id= None,
-            destination_id= None,
-            review_id= None,
-            userInfo_id= userInfo_id
-        )
-        # Thêm hình ảnh vào thông tin người dùng
-        img = await image.create_image(db, sc_image, image=image_inp)
-        
-            
-    except Exception as e:
-        print(f"Could not process image {image_inp}: {str(e)}")
-        return False
-    
-    return True
-
-async def delete_image(db: Session, userInfo_id: int):
-    imageHandler = ImageHandler()
-    
-    try:
-        # Tìm hình ảnh liên quan đến userInfo_id
-        img = db.query(models.Image).filter(models.Image.userInfo_id == userInfo_id).first()
-        if not img:
-            return
-        # Xóa hình ảnh khỏi Azure Blob Storage
-        blob_name_prefix = f"userInfoes/{userInfo_id}/{img.id}.png"
-        await imageHandler.delete_image_azure(blob_name_prefix)
-
-        # Xóa hình ảnh khỏi cơ sở dữ liệu
-        db.delete(img)
-        db.commit()  # Lưu lại thay đổi
-
-    except Exception as e:
-        db.rollback()  # Hoàn tác nếu có lỗi
-        print(f"Could not delete image: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to delete image: {str(e.detail)} ")
-
-    return {"status": "success", "userInfo_id": userInfo_id}
-
 def create_user_info_by_userid(info: schemas.UserInfoBase, address: schemas.Address ,user_id: int, db: Session):
     try:
         
@@ -179,10 +135,10 @@ def update_user_info(info: schemas.UserInfoBase, address: schemas.Address, id: i
         print(f"Exception type: {type(e).__name__}, message: {str(e.detail)}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to update user info:{str(e.detail)}")
     
-def delete_user_info(id: int, db: Session):
+async def delete_user_info(id: int, db: Session):
     try:
-        delete_image(db=db,userInfo_id=id)
         user_info = db.query(models.UserInfo).filter(models.UserInfo.id == id).first()  # Chờ truy vấn
+        await image.delete_image(db=db,id=user_info.image.id)
         if not user_info:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                                 detail=f"UserInfo with the id {id} is not available")
