@@ -199,14 +199,17 @@ async def delete_by_id(id: int, db: Session):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=f"Error deleting destination: {str(e)}")
 
-
-
 def get_ratings_and_reviews_number_of_destinationID(destination_id: int, db: Session):
-    reviews = db.query(models.Review).filter(models.Review.destination_id == destination_id).all()
-    if reviews:
+    # Lấy ra tất cả các rating cho destination_id cụ thể
+    ratings = db.query(models.Review.rating).filter(models.Review.destination_id == destination_id).all()
+    
+    if ratings:
+        # Chuyển đổi từ danh sách tuple thành danh sách rating
+        ratings_list = [rating[0] for rating in ratings]
+
         # Tính tổng số điểm và số lượng đánh giá
-        total_ratings = sum(review.rating for review in reviews)
-        quantity_of_reviews = len(reviews)
+        total_ratings = sum(ratings_list)
+        quantity_of_reviews = len(ratings_list)
         average_rating = total_ratings / quantity_of_reviews
 
         # Tính điểm theo công thức
@@ -221,7 +224,6 @@ def get_ratings_and_reviews_number_of_destinationID(destination_id: int, db: Ses
             "ratings": 0,
             "numberOfReviews": 0
         }
-     
 
 def get_popular_destinations_by_city_ID(city_id: int, db: Session):
     # Truy vấn để lấy danh sách các điểm đến phổ biến

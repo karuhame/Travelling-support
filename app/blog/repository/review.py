@@ -3,6 +3,8 @@ from blog import models, schemas
 from fastapi import HTTPException, UploadFile, status
 from blog.hashing import Hash
 from blog.repository.image_handler import ImageHandler
+from blog.repository import image
+
 def create_by_userId_destinationId(user_id: int, destination_id: int,  request: schemas.Review, db: Session):
     try:
         new_review = models.Review(
@@ -52,7 +54,7 @@ def get_reviews_of_user_in_1_destination_by_userId_and_destinationID(destination
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=f"Error retrieving reviews: {str(e)}")
 def update_by_id(id: int, request: schemas.Review, db: Session):
-    try:
+    try:        
         review = db.query(models.Review).filter(models.Review.id == id).first()  # Chờ truy vấn
         if not review:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
@@ -68,11 +70,13 @@ def update_by_id(id: int, request: schemas.Review, db: Session):
         return review
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail=f"Error updating review: {str(e)}")
+                            detail=f"Error updating review: {str(e.detail)}")
 
-def delete_by_id(id: int, db: Session):
+async def delete_by_id(id: int, db: Session):
     try:
         review = db.query(models.Review).filter(models.Review.id == id).first()  # Chờ truy vấn
+        for img in review.images:
+            await image.delete_image(db=db, id=img.id)
         if not review:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                                 detail=f"review with the id {id} is not available")

@@ -1,6 +1,6 @@
 from datetime import date, time
 from typing import List, Optional
-from fastapi import APIRouter, Body, HTTPException, Path, Query, UploadFile
+from fastapi import APIRouter, Body, File, HTTPException, Path, Query, UploadFile
 from .. import database, schemas, models
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, status
@@ -131,8 +131,8 @@ async def update_destination_by_id(
     new_dest = destination.create_address_of_destination(db=db, destination=new_dest, address=address)
     
     #delete images_to_remove
-    for id in image_ids_to_remove:
-        await image.delete_image(db=db,id=id )
+    for img_id in image_ids_to_remove:
+        await image.delete_image(db=db,id=img_id )
         
     #add new images
     for img in new_images:
@@ -199,3 +199,11 @@ def get_destination(
 @router.delete("/{id}")
 async def delete_destination_by_id(id: int, db: Session = Depends(get_db)):
     return await destination.delete_by_id(id, db)
+
+# @router.post("/uploadfiles/")
+# async def upload_files(files: List[UploadFile] = None):
+#     if not files:
+#         return {"message": "No files uploaded."}
+    
+#     file_names = [file.filename for file in files]
+#     return {"file_names": file_names}
