@@ -23,14 +23,6 @@ def add_tag_to_destination(tag_id: int, dest_id: int,  db: Session = Depends(get
 def create_tag(request: schemas.Tag, db: Session = Depends(get_db)):
     return tag.create_tag(request, db)
 
-@router.get("/", response_model=List[schemas.ShowTag])
-def get_all_tags(db: Session = Depends(get_db)):
-    return tag.get_all_tags(db)
-
-@router.get("/{id}", response_model=schemas.ShowTag)
-def get_tag(id: int, db: Session = Depends(get_db)):
-    return tag.get_tag_by_id(id, db)
-
 @router.put("/{id}", response_model=schemas.ShowTag)
 def update_tag(id: int, request: schemas.Tag, db: Session = Depends(get_db)):
     return tag.update_tag(id, request, db)
@@ -39,3 +31,16 @@ def update_tag(id: int, request: schemas.Tag, db: Session = Depends(get_db)):
 def delete_tag(id: int, db: Session = Depends(get_db)):
     return tag.delete_tag(id, db)
 
+
+@router.get("/destination_num")
+def get_destination_num_of_each_tag(db: Session = Depends(get_db)):
+    tags = tag.get_destination_num_of_each_tag(db=db)
+    return tags
+
+@router.get("/{id}", response_model=schemas.ShowTag)
+def get_tag(id: int, db: Session = Depends(get_db)):
+    return tag.get_tag_by_id(id, db)
+
+@router.get("/", response_model=List[schemas.ShowTag])
+def get_all_tags(db: Session = Depends(get_db)):
+    return tag.get_all_tags(db)
