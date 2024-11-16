@@ -98,6 +98,7 @@ def get_by_id(
 def get_reviews(
     destination_id: int = None,
     user_id: int = None,
+    language: str = None,
     db: Session = Depends(get_db)
 ):
 
@@ -107,7 +108,16 @@ def get_reviews(
         else:
             reviews = review.get_reviews_of_destination_by_destinationId(destination_id, db)
         
-        return [schemas.ShowReview.from_orm(rv).dict() for rv in reviews]
+        results = []
+        if language != None:
+            for item in reviews:
+                if item.language == language:
+                    results.append(item)
+            return [schemas.ShowReview.from_orm(rv).dict() for rv in results]
+            
+        else:
+            return [schemas.ShowReview.from_orm(rv).dict() for rv in reviews]
+            
 
     raise HTTPException(status_code=400, detail="You must provide destination_id, or both user_id and destination_id.")
 
