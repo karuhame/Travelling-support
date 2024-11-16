@@ -147,6 +147,7 @@ class Review(BaseModel):
     title :str 
     content :str 
     rating : float
+    language: str
     date_create :date
     
     

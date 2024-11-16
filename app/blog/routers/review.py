@@ -22,6 +22,7 @@ async def create_by_userId_destinationId(
     rating : float, 
     user_id: int,
     destination_id: int, 
+    language: str,
     date_create: date = date.today(),
     images: list[UploadFile] = [],
     db: Session = Depends(get_db)):
@@ -31,6 +32,7 @@ async def create_by_userId_destinationId(
         content = content,
         rating = rating,
         date_create = date_create,
+        language = language,
         )
     new_review = review.create_by_userId_destinationId(user_id, destination_id, sh_review, db)    
     for img in images:
@@ -50,6 +52,7 @@ async def update_review_by_id(
     title :str = None,
     content :str = None,
     rating : float = None,
+    language: str = None,
 
     date_create : date = date.today(),
     db: Session = Depends(get_db)):
@@ -59,6 +62,8 @@ async def update_review_by_id(
         content = content,
         rating = rating,
         date_create = date_create,
+        language = language,
+
         )
     
     new_review = review.update_by_id(id=id, request = sh_review, db = db)

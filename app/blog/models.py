@@ -238,6 +238,7 @@ class Review(Base):
     content = Column(String(100), default='No Content')  
     rating = Column(Float, default=0.0)  
     date_create = Column(Date, nullable=True, default=None)  
+    language = Column(String(255), nullable=True, default=None)  
     
     # Foreign Key
     user_id = Column(Integer, ForeignKey('user.id', ondelete='CASCADE'))

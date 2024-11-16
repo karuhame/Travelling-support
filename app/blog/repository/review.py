@@ -12,6 +12,7 @@ def create_by_userId_destinationId(user_id: int, destination_id: int,  request: 
             content = request.content,
             rating = request.rating,
             date_create = request.date_create,
+            language = request.language,
             user_id = user_id,
             destination_id = destination_id
         )
@@ -64,6 +65,8 @@ def update_by_id(id: int, request: schemas.Review, db: Session):
         review.content = request.content
         review.rating = request.rating
         review.date_create = request.date_create
+        review.language = request.language,
+
     
         db.commit()  # Chờ hoàn tất việc commit
         db.refresh(review)  # Chờ làm mới đối tượng mới
