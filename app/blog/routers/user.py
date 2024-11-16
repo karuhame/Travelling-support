@@ -34,3 +34,7 @@ def admin_all(db: Session = Depends(get_db), current_user: schemas.User = Depend
 @router.post('/status_change/{user_id}')
 def change_status(user_id: int, db:Session = Depends(get_db)):
     return user.change_status(db=db, user_id = user_id)
+
+@router.delete('/{id}')
+def delete_user(id: int, db: Session = Depends(get_db)):
+    return user.delete(id=id, db=db)

@@ -93,10 +93,12 @@ def delete(id: int, db: Session):
 
         db.delete(user)  # Chờ xóa đối tượng
         db.commit()  # Chờ hoàn tất việc commit
-        return {"detail": "User deleted successfully"}
+        return True
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=f"Error deleting user: {str(e)}")
+    return False
+    
 def change_status(db: Session, user_id:int ):
     try:
         user = db.query(models.User).filter(models.User.id == user_id).first()  # Chờ truy vấn
