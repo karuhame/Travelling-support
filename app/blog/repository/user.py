@@ -3,6 +3,8 @@ from blog import models, schemas
 from fastapi import HTTPException, status
 from blog.hashing import Hash
 from typing import Optional
+from sqlalchemy import func
+
 
 def create(request: schemas.User, db: Session):
     try:
@@ -128,3 +130,40 @@ def get_user_by_email(email: str, db: Session) -> Optional[models.User]:
     Trả về None nếu không tìm thấy user, không raise exception.
     """
     return db.query(models.User).filter(models.User.email == email).first()
+
+
+def get_user_counts(
+    period: str,
+    db: Session):
+    if period == "day_of_week":
+        results = (
+            db.query(
+                func.dayofweek(models.User.created_at).label('day_of_week'),  # MySQL function
+                func.count(models.User.id).label('user_count')
+            )
+            .group_by('day_of_week')
+            .all()
+        )
+        return [schemas.UserCount(month=row.day_of_week, user_count=row.user_count) for row in results]
+
+    elif period == "week_of_month":
+        results = (
+            db.query(
+                func.week(models.User.created_at, 1).label('week'),  # MySQL function with mode 1 for week starts on Monday
+                func.count(models.User.id).label('user_count')
+            )
+            .group_by('week')
+            .all()
+        )
+        return [schemas.UserCount(month=row.week, user_count=row.user_count) for row in results]
+
+    elif period == "month":
+        results = (
+            db.query(
+                func.month(models.User.created_at).label('month'),  # MySQL function
+                func.count(models.User.id).label('user_count')
+            )
+            .group_by('month')
+            .all()
+        )
+        return [schemas.UserCount(month=row.month, user_count=row.user_count) for row in results]

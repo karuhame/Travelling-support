@@ -240,3 +240,18 @@ class ShowDestination(Destination):
     
     class Config():
         orm_mode = True
+
+
+class UserCountByMonth(BaseModel):
+    month:Optional[int] = None
+    user_count: int
+    
+    class Config():
+        orm_mode = True
+
+class UserCountDetail(BaseModel):
+    day: Optional[int] = None
+    user_count: int
+    
+    class Config():
+        orm_mode = True

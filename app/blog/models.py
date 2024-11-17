@@ -1,6 +1,7 @@
-from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String, Date, Time
+from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String, Date, Time, DateTime
 from blog.database import Base
 from sqlalchemy.orm import relationship
+from datetime import datetime
 
 class User(Base):
     __tablename__ = 'user'
@@ -11,6 +12,7 @@ class User(Base):
     email = Column(String(50), unique=True)
     role = Column(String(10), default="guest") #guest/business/admin
     status = Column(String(10), default="enable")
+    created_at = Column(DateTime, default=datetime.utcnow)  # New field
     
     # Relationship
     business_type = relationship("BusinessType", back_populates="user")
