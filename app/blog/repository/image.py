@@ -62,7 +62,8 @@ async def delete_image(db: Session, id: int):
 
 async def update_image(db: Session, id: int, image_inp : UploadFile):
     try:
-        print(image_inp)
+        import pdb;pdb.set_trace()
+        print(image_handler.container_name)
         db_image = db.query(models.Image).filter(models.Image.id == id).first()
 
         # Tải ảnh lên Azure Blob Storage

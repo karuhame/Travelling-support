@@ -45,3 +45,5 @@ def read_user_counts_by_day(
     if month < 1 or month > 12:
         raise HTTPException(status_code=400, detail="Invalid month. Month must be between 1 and 12.")
     return dashboard.get_account_counts_by_day(db=db, year=year, is_business= is_business,month= month)
+
+

@@ -138,7 +138,6 @@ class ImageHandler:
             async with BlobServiceClient.from_connection_string(self.connection_string) as blob_service_client:
                 container_client = blob_service_client.get_container_client(self.container_name)
                 blob_client = container_client.get_blob_client(blob_name_prefix)
-
                 with open(img_file_name, "rb") as data:
                     await blob_client.upload_blob(data, overwrite=True, content_type='image/png')
                     print(f"Uploaded {img_file_name} to Azure as {blob_name_prefix}")
