@@ -62,12 +62,12 @@ async def delete_image(db: Session, id: int):
 
 async def update_image(db: Session, id: int, image_inp : UploadFile):
     try:
-        import pdb;pdb.set_trace()
         print(image_handler.container_name)
         db_image = db.query(models.Image).filter(models.Image.id == id).first()
 
         # Tải ảnh lên Azure Blob Storage
         img_file_name = ImageHandler.save_image(image=image_inp, file_location=f"travel-image/download.png")
+        
         
         await image_handler.upload_to_azure(img_file_name, blob_name_prefix=db_image.blob_name)  # Tải lên từ URL
         db.add(db_image)

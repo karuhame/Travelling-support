@@ -138,7 +138,8 @@ def update_user_info(info: schemas.UserInfoBase, address: schemas.Address, id: i
 async def delete_user_info(id: int, db: Session):
     try:
         user_info = db.query(models.UserInfo).filter(models.UserInfo.id == id).first()  # Chờ truy vấn
-        await image.delete_image(db=db,id=user_info.image.id)
+        if user_info.image.blob_name:
+            await image.delete_image(db=db,id=user_info.image.id)
         if not user_info:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                                 detail=f"UserInfo with the id {id} is not available")

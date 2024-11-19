@@ -90,7 +90,7 @@ async def update_user_info(
     )
     
     user_info = userInfo.update_user_info(address=address, info=info, id=id, db=db)
-    if user_info.image:
+    if user_info.image.blob_name:
         await image.update_image(db,image_inp=image_inp, id=user_info.image.id)
     else:
         await image.create_image(db, sc_image, image=image_inp)
