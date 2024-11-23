@@ -160,6 +160,7 @@ class Review(BaseModel):
     rating : float
     language: str
     date_create :date
+    companion: str
     
     
     

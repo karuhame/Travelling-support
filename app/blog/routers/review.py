@@ -14,7 +14,6 @@ router = APIRouter(
 
 get_db = database.get_db
 
-
 @router.post("/")
 async def create_by_userId_destinationId(
     title :str,
@@ -23,7 +22,9 @@ async def create_by_userId_destinationId(
     user_id: int,
     destination_id: int, 
     language: str,
+    companion: str, 
     date_create: date = date.today(),
+    
     images: list[UploadFile] = [],
     db: Session = Depends(get_db)):
     
@@ -53,6 +54,7 @@ async def update_review_by_id(
     content :str = None,
     rating : float = None,
     language: str = None,
+    companion: str = None,
 
     date_create : date = date.today(),
     db: Session = Depends(get_db)):
@@ -99,6 +101,7 @@ def get_reviews(
     destination_id: int = None,
     user_id: int = None,
     language: str = None,
+    companion: str = None,
     db: Session = Depends(get_db)
 ):
 
@@ -109,15 +112,12 @@ def get_reviews(
             reviews = review.get_reviews_of_destination_by_destinationId(destination_id, db)
         
         results = []
-        if language != None:
-            for item in reviews:
-                if item.language == language:
-                    results.append(item)
-            return [schemas.ShowReview.from_orm(rv).dict() for rv in results]
-            
-        else:
-            return [schemas.ShowReview.from_orm(rv).dict() for rv in reviews]
-            
+        for item in reviews:
+            if (language is None or item.language == language) and (companion is None or item.companion == companion):
+                results.append(item)
+
+        return [schemas.ShowReview.from_orm(rv).dict() for rv in results]
+                
 
     raise HTTPException(status_code=400, detail="You must provide destination_id, or both user_id and destination_id.")
 
