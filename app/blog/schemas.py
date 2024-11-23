@@ -136,7 +136,7 @@ class Hotel(BaseModel):
     room_types: Optional[str]
     hotel_class: int
     hotel_styles: Optional[str]
-    Languages: Optional[str]
+    languages: Optional[str]
     phone: Optional[str]
     email: Optional[str]
     website: Optional[str]

@@ -163,7 +163,7 @@ async def create_sample_data():
                         room_types='Suite, Deluxe',
                         hotel_class=random.randint(3, 5),  # Hotel class từ 3-5 sao
                         hotel_styles='Luxury, Modern',
-                        Languages='English, Vietnamese',
+                        languages='English, Vietnamese',
                     )
                     
                     # restaurant = models.Restaurant(

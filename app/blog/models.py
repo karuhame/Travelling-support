@@ -146,7 +146,7 @@ class Hotel(Base):
     room_types = Column(String(255), default='Ocean view, City view, family room')
     hotel_class = Column(Integer, default=0)
     hotel_styles = Column(String(255), default='Ocean view, Trendy')
-    Languages = Column(String(255), default='Vietnamese, English, Chinese')
+    languages = Column(String(255), default='Vietnamese, English, Chinese')
     phone =  Column(String(255), nullable=True)
     email =  Column(String(255), nullable=True)
     website =  Column(String(255), nullable=True)
