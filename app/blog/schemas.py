@@ -118,6 +118,17 @@ class Restaurant(BaseModel):
         default=None,
         description="Special dietary options that the restaurant can accommodate (e.g., vegan, gluten-free, etc.)"
     )
+    
+    feature: Optional[str] = Field(
+        default=None,
+        description="Feature of restaurant (e.g., outdoor sitting, private dinning, dinner, etc.)"
+    )
+    meal: Optional[str] = Field(
+        default=None,
+        description="Feature of restaurant (e.g., outdoor sitting, private dinning, dinner, etc.)"
+    )
+
+    
 
 class Hotel(BaseModel):
     property_amenities: Optional[str]

@@ -162,6 +162,9 @@ class Restaurant(Base):
     id = Column(Integer, primary_key=True, index=True)
     cuisine = Column(String(50), default='Mixed')
     special_diet = Column(String(50), nullable=True)
+    feature = Column(String(255), nullable   = True)
+    meal = Column(String(255), nullable = True)  
+    
     
     
     # destination_id = Column(Integer, ForeignKey('destination.id', name="fk_hotel_destination", ondelete='CASCADE'), nullable=True)
