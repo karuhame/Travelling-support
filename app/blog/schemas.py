@@ -95,6 +95,7 @@ class ShowAddress(Address):
     class Config():
         orm_mode = True
 class Destination(BaseModel):
+    user_id: Optional[int]
     name : Optional[str]
     price_bottom : Optional[int]  
     price_top : Optional[int]  

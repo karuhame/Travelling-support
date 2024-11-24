@@ -45,6 +45,7 @@ def create(request, db: Session):
     try:
         # Tạo điểm đến mới
         new_destination = models.Destination(
+            user_id = request.user_id,
             name=request.name,
             price_bottom=request.price_bottom,
             price_top=request.price_top,

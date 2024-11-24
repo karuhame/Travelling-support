@@ -37,6 +37,7 @@ def get_by_tag_lists(
 async def create_destination(
     images: Optional[List[UploadFile]] = [],
     
+    user_id: int = None,
     name: str = None,
     price_bottom: int = None,
     price_top: int = None,
@@ -54,7 +55,6 @@ async def create_destination(
     db: Session = Depends(get_db),
     
 ):
-
     address = schemas.Address(
         district=district,
         street=street,
@@ -63,6 +63,7 @@ async def create_destination(
     )
     
     sh_destination = schemas.Destination(
+        user_id=user_id,
         name=name,
         price_bottom=price_bottom,
         price_top=price_top,
@@ -72,10 +73,10 @@ async def create_destination(
         duration=duration,
         description=description
     )
-
+    
     new_dest = destination.create(sh_destination, db)
     new_dest = destination.create_address_of_destination(db=db, destination=new_dest, address=address)
-    
+    print(new_dest.user_id)
     for img in images:
         sc_image = schemas.Image(
             destination_id = new_dest.id
