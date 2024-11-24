@@ -92,6 +92,7 @@ async def update_destination_by_id(
     new_images: Optional[List[UploadFile]] = [],  # Ảnh mới
     image_ids_to_remove: Optional[List[int]] = Body([]),  # Danh sách ID ảnh cần xóa
     
+    user_id: int = None,
     name: str = None,
     price_bottom: int = None,
     price_top: int = None,
@@ -117,6 +118,7 @@ async def update_destination_by_id(
     )
     
     sh_destination = schemas.Destination(
+        user_id=user_id,
         name=name,
         price_bottom=price_bottom,
         price_top=price_top,

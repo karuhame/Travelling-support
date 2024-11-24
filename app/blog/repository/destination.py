@@ -163,6 +163,7 @@ def update_by_id(id: int, request: schemas.Destination, db: Session):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                                 detail=f"destination with the id {id} is not available")
 
+        destination.user_id=request.user_id,
         destination.name =request.name
         destination.price_bottom =request.price_bottom
         destination.price_top =request.price_top
