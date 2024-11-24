@@ -34,6 +34,7 @@ async def create_by_userId_destinationId(
         rating = rating,
         date_create = date_create,
         language = language,
+        companion=companion,
         )
     new_review = review.create_by_userId_destinationId(user_id, destination_id, sh_review, db)    
     for img in images:
@@ -65,6 +66,7 @@ async def update_review_by_id(
         rating = rating,
         date_create = date_create,
         language = language,
+        companion=companion,
 
         )
     
