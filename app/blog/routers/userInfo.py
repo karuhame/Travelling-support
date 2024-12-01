@@ -54,7 +54,7 @@ async def create_user_info_by_userid(
     return schemas.ShowUserInfo.from_orm(user_info)
 
 @router.get("/{id}")
-def get_user_info(id: int, db: Session = Depends(get_db), current_user: schemas.User = Depends(oauth2.get_current_user)):
+def get_user_info(id: int, db: Session = Depends(get_db)):
     user_info = userInfo.get_userInfo_by_id(db=db, id=id)  # Gọi hàm với await
     return schemas.ShowUserInfo.from_orm(user_info)  # Trả về thông tin người dùng
 
