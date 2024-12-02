@@ -2,10 +2,12 @@ from sqlalchemy.orm import Session
 from blog import models, schemas
 from fastapi import HTTPException, UploadFile, status
 from blog.hashing import Hash
-from blog.repository.image import ImageHandler
 from . import destination
 
 # them update rating cho destination
+from blog.repository.image_handler import ImageHandler
+from blog.repository import image
+
 def create_by_userId_destinationId(user_id: int, destination_id: int,  request: schemas.Review, db: Session):
     try:
         # Kiểm tra xem user đã review destination này chưa
@@ -25,6 +27,8 @@ def create_by_userId_destinationId(user_id: int, destination_id: int,  request: 
             content = request.content,
             rating = request.rating,
             date_create = request.date_create,
+            language = request.language,
+            companion = request.companion,
             user_id = user_id,
             destination_id = destination_id
         )
@@ -53,7 +57,6 @@ def get_by_id(id: int, db: Session):
 
 def get_reviews_of_destination_by_destinationId(destination_id: int, db: Session):
     try:
-        print(destination_id)
         reviews = db.query(models.Review).filter(models.Review.destination_id == destination_id).all()  # Chờ truy vấn
         return reviews
     except Exception as e:
@@ -73,7 +76,7 @@ def get_reviews_of_user_in_1_destination_by_userId_and_destinationID(destination
     
 # them update rating cho destination
 def update_by_id(id: int, request: schemas.Review, db: Session):
-    try:
+    try:        
         review = db.query(models.Review).filter(models.Review.id == id).first()  # Chờ truy vấn
         if not review:
             raise HTTPException(
@@ -88,6 +91,9 @@ def update_by_id(id: int, request: schemas.Review, db: Session):
         review.content = request.content
         review.rating = request.rating
         review.date_create = request.date_create
+        review.language = request.language
+        review.companion = request.companion
+
     
         db.commit()  # Chờ hoàn tất việc commit
         db.refresh(review)  # Chờ làm mới đối tượng mới
@@ -96,16 +102,14 @@ def update_by_id(id: int, request: schemas.Review, db: Session):
         destination.update_destination_rating(destination_id=destination_id, db=db)
         return review
     except Exception as e:
-        db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error updating review: {str(e)}"
-        )
-    
-# them update rating cho destination
-def delete_by_id(id: int, db: Session):
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail=f"Error updating review: {str(e.detail)}")
+
+async def delete_by_id(id: int, db: Session):
     try:
-        review = db.query(models.Review).filter(models.Review.id == id).first()
+        review = db.query(models.Review).filter(models.Review.id == id).first()  # Chờ truy vấn
+        for img in review.images:
+            await image.delete_image(db=db, id=img.id)
         if not review:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                               detail=f"review with the id {id} is not available")

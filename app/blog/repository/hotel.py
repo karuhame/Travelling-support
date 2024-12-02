@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from blog import models, schemas
 from fastapi import HTTPException, UploadFile, status
 from blog.hashing import Hash
-from blog.repository.image import ImageHandler
+from blog.repository.image_handler import ImageHandler
 from blog.repository import destination
 
 from sqlalchemy.orm import Session
@@ -23,7 +23,7 @@ def create_by_destinationID(destination_id: int, request:schemas.Hotel, db: Sess
             room_types = request.room_types,
             hotel_class = request.hotel_class,
             hotel_styles = request.hotel_styles,
-            Languages = request.Languages
+            languages = request.languages
         )
         db.add(new_hotel)
         db.commit()  # Chờ hoàn tất việc commit
@@ -45,7 +45,7 @@ def create_hotel_of_destination(destination: models.Destination, request:schemas
             room_types = request.room_types,
             hotel_class = request.hotel_class,
             hotel_styles = request.hotel_styles,
-            Languages = request.Languages
+            languages = request.languages
         )
         db.add(new_hotel)
         db.commit()  # Chờ hoàn tất việc commit
@@ -74,7 +74,7 @@ def update_hotel_info_by_id(id:int, request: schemas.Hotel, db: Session):
         hotel.room_types = request.room_types,
         hotel.hotel_class = request.hotel_class,
         hotel.hotel_styles = request.hotel_styles,
-        hotel.Languages = request.Languages
+        hotel.languages = request.languages
         hotel.phone = request.phone
         hotel.email = request.email
         hotel.website = request.website

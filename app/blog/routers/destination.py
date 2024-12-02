@@ -1,10 +1,10 @@
 from datetime import date, time
 from typing import List, Optional
-from fastapi import APIRouter, Body, HTTPException, Path, Query, UploadFile
+from fastapi import APIRouter, Body, File, HTTPException, Path, Query, UploadFile
 from .. import database, schemas, models
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, status
-from ..repository import destination, user
+from ..repository import destination, user,image
 
 router = APIRouter(
     prefix="/destination",
@@ -36,8 +36,9 @@ def get_by_tag_lists(
 @router.post("/",
              )
 async def create_destination(
-    images: Optional[List[UploadFile]] = None,
+    images: Optional[List[UploadFile]] = [],
     
+    user_id: int = None,
     name: str = None,
     price_bottom: int = None,
     price_top: int = None,
@@ -55,7 +56,6 @@ async def create_destination(
     db: Session = Depends(get_db),
     
 ):
-
     address = schemas.Address(
         district=district,
         street=street,
@@ -64,6 +64,7 @@ async def create_destination(
     )
     
     sh_destination = schemas.Destination(
+        user_id=user_id,
         name=name,
         price_bottom=price_bottom,
         price_top=price_top,
@@ -73,18 +74,26 @@ async def create_destination(
         duration=duration,
         description=description
     )
-
+    
     new_dest = destination.create(sh_destination, db)
     new_dest = destination.create_address_of_destination(db=db, destination=new_dest, address=address)
-    await destination.add_images_to_destination(db, images=images, destination_id=new_dest.id)
+    print(new_dest.user_id)
+    for img in images:
+        sc_image = schemas.Image(
+            destination_id = new_dest.id
+        )
+        await image.create_image(db, request=sc_image, image=img)
+    
     
     return schemas.ShowDestination.from_orm(new_dest)
 
 @router.put("/{id}", response_model=schemas.ShowDestination)
 async def update_destination_by_id(
     id: int,
-    images: Optional[List[UploadFile]] = None,
+    new_images: Optional[List[UploadFile]] = [],  # Ảnh mới
+    image_ids_to_remove: Optional[List[int]] = Body([]),  # Danh sách ID ảnh cần xóa
     
+    user_id: int = None,
     name: str = None,
     price_bottom: int = None,
     price_top: int = None,
@@ -110,6 +119,7 @@ async def update_destination_by_id(
     )
     
     sh_destination = schemas.Destination(
+        user_id=user_id,
         name=name,
         price_bottom=price_bottom,
         price_top=price_top,
@@ -122,7 +132,18 @@ async def update_destination_by_id(
 
     new_dest = destination.update_by_id(id, sh_destination, db)
     new_dest = destination.create_address_of_destination(db=db, destination=new_dest, address=address)
-    await destination.add_images_to_destination(db, images=images, destination_id=new_dest.id)
+    
+    #delete images_to_remove
+    for img_id in image_ids_to_remove:
+        await image.delete_image(db=db,id=img_id )
+        
+    #add new images
+    for img in new_images:
+        sc_image = schemas.Image(
+            destination_id = new_dest.id
+        )
+        await image.create_image(db, request=sc_image, image=img)
+    
     
     return schemas.ShowDestination.from_orm(new_dest)
 
@@ -178,9 +199,6 @@ def get_destination(
     return final_results
 
 
-@router.delete("/{id}")
-def delete_destination_by_id(id: int, db: Session = Depends(get_db)):
-    return destination.delete_by_id(id, db)
 
 
 @router.get('/{destination_id}/like_count', response_model=int)
@@ -251,7 +269,7 @@ def get_top_destination_ids(
     return destination.get_top_destination_ids_by_tag(db, tag_id, limit)
 
 
-@router.get('/recommendations/{user_id}')
+@router.get('/recommendations_bylikes/{user_id}')
 def get_recommendations(
     user_id: int, 
     city_id: Optional[int] = None,
@@ -260,3 +278,13 @@ def get_recommendations(
 ):
     return destination.get_recommended_destinations(user_id, db, city_id, limit)
 
+async def delete_destination_by_id(id: int, db: Session = Depends(get_db)):
+    return await destination.delete_by_id(id, db)
+
+# @router.post("/uploadfiles/")
+# async def upload_files(files: List[UploadFile] = None):
+#     if not files:
+#         return {"message": "No files uploaded."}
+    
+#     file_names = [file.filename for file in files]
+#     return {"file_names": file_names}

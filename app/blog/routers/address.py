@@ -3,7 +3,7 @@ from fastapi import APIRouter
 from .. import database, schemas, models
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, status
-from ..repository import address
+from ..repository import address, city
 
 router = APIRouter(
     prefix="/address",
@@ -12,10 +12,10 @@ router = APIRouter(
 
 get_db = database.get_db
 
-@router.get("/cities", response_model=list[str])
+@router.get("/cities")
 def read_distinct_cities(db: Session = Depends(get_db)):
-    cities = address.get_distinct_cities(db=db)
-    return [city[0] for city in cities]  # Chuyển đổi tuple thành danh sách
+    cities = address.get_distinct_cities(db)
+    return cities
 
 @router.get("/districts/{city_id}", response_model=list[str])
 def read_distinct_districts(city_id: int, db: Session = Depends(get_db)):

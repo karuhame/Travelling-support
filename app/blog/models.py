@@ -1,6 +1,7 @@
-from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String, Date, Time
+from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String, Date, Time, DateTime
 from blog.database import Base
 from sqlalchemy.orm import relationship
+from datetime import datetime
 
 
 class User(Base):
@@ -12,6 +13,7 @@ class User(Base):
     email = Column(String(50), unique=True)
     role = Column(String(10), default="guest") #guest/business/admin
     status = Column(String(10), default="enable")
+    created_at = Column(DateTime, default=datetime.utcnow)  # New field
     
     # Relationship
     business_type = relationship("BusinessType", back_populates="user")
@@ -95,6 +97,7 @@ class Image(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     url = Column(String(100), nullable=True)
+    blob_name = Column(String(100), nullable = True)
     
     # Khóa ngoại cho City
     city_id = Column(Integer, ForeignKey('city.id'), nullable=True)
@@ -150,7 +153,7 @@ class Hotel(Base):
     room_types = Column(String(255), default='Ocean view, City view, family room')
     hotel_class = Column(Integer, default=0)
     hotel_styles = Column(String(255), default='Ocean view, Trendy')
-    Languages = Column(String(255), default='Vietnamese, English, Chinese')
+    languages = Column(String(255), default='Vietnamese, English, Chinese')
     phone =  Column(String(255), nullable=True)
     email =  Column(String(255), nullable=True)
     website =  Column(String(255), nullable=True)
@@ -166,6 +169,9 @@ class Restaurant(Base):
     id = Column(Integer, primary_key=True, index=True)
     cuisine = Column(String(50), default='Mixed')
     special_diet = Column(String(50), nullable=True)
+    feature = Column(String(255), nullable   = True)
+    meal = Column(String(255), nullable = True)  
+    
     
     
     # destination_id = Column(Integer, ForeignKey('destination.id', name="fk_hotel_destination", ondelete='CASCADE'), nullable=True)
@@ -244,6 +250,8 @@ class Review(Base):
     content = Column(String(100), default='No Content')  
     rating = Column(Float, default=0.0)  
     date_create = Column(Date, nullable=True, default=None)  
+    language = Column(String(255), nullable=True, default=None)
+    companion =  Column(String(50), default='Solo')   
     
     # Foreign Key
     user_id = Column(Integer, ForeignKey('user.id', ondelete='CASCADE'))

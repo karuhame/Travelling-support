@@ -44,11 +44,16 @@ def get_all_restaurants(
                                    , description="Danh sách các khoảng giá (ví dụ: 'vege')"),
     cuisines: list[str] = Query(default=[], alias='cuisines'
                                 , description="Danh sách các khoảng giá (ví dụ: 'Vietnam', 'ThaiLand', 'Indo')"),
+    features: list[str] = Query(default=[], alias='features'
+                                , description="Danh sách các khoảng giá (ví dụ: 'outdoor sitting, private dining, buffet')"),
+    meals: list[str] = Query(default=[], alias='meals'
+                                , description="Danh sách các khoảng giá (ví dụ: 'breakfast, dinner')"),
+
 ):
-    
     restaurants = restaurant.get_all_restaurant(db, city_id)
-    if any([special_diets, cuisines]):
-        restaurants = restaurant.filter_restaurant(restaurants = restaurants, db=db, cuisines=cuisines, special_diets=special_diets) 
+    
+    if any([special_diets, cuisines, features, meals]):
+        restaurants = restaurant.filter_restaurant(restaurants = restaurants, db=db, cuisines=cuisines, special_diets=special_diets, features=features, meals=meals) 
     
     if is_popular == True:
         restaurants = destination.sorting_by_ratings_and_quantity_of_reviews(db=db, destinations=restaurants)

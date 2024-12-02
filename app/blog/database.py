@@ -13,6 +13,7 @@ from fastapi import HTTPException
 from blog import repository
 from blog import models
 from . import schemas  # Import schemas nếu cần
+from blog.repository.image_handler import ImageHandler
 from blog.repository.image import ImageHandler
 # from blog.repository import destination
 
@@ -60,12 +61,14 @@ def get_db():
 def delete_all(engine):
     pass
 
-def create_sample_data():
+async def create_sample_data():
 
     # Lấy phiên làm việc với cơ sở dữ liệu
     db = next(get_db())
     
     try:
+        imageHandler = ImageHandler()
+
         # Kiểm tra xem có người dùng nào trong cơ sở dữ liệu không
         existing_users = db.execute(select(models.User)).scalars().all()
         if not existing_users:  # Nếu không có người dùng nào
@@ -124,6 +127,8 @@ def create_sample_data():
                 db.refresh(city)
                 
                 # crawl data cho city
+                # await ImageHandler.crawl_image(db=db, city= city)
+                # imageHandler.crawl_image(db=db, city=city )
                 # ImageHandler.crawl_image(db=db, city= city)
                 # image.crawl_image(db=db, city=city )
                 
@@ -155,6 +160,7 @@ def create_sample_data():
                     db.commit()
                     db.refresh(destination)
                     
+                    # await imageHandler.fake_db_destination(db, destination=destination)
                     imageHandler = ImageHandler()
                     # imageHandler.fake_db_destination(db, destination=destination)
                     
@@ -164,7 +170,7 @@ def create_sample_data():
                         room_types='Suite, Deluxe',
                         hotel_class=random.randint(3, 5),  # Hotel class từ 3-5 sao
                         hotel_styles='Luxury, Modern',
-                        Languages='English, Vietnamese',
+                        languages='English, Vietnamese',
                     )
                     
                     # restaurant = models.Restaurant(
@@ -191,6 +197,7 @@ def create_sample_data():
                         db.add(review)
                         db.commit()
                         db.refresh(review)
+                        # await imageHandler.fake_db_review(db, review=review)
                         # imageHandler.fake_db_review(db, review=review)
                         
     

@@ -57,18 +57,20 @@ class SignUp(BaseModel):
 
      
 class Image(BaseModel):
-    id: int
     city_id: Optional[int] = None
     destination_id: Optional[int] = None
-    url: str
+    userInfo_id: Optional[int] = None
+    review_id:  Optional[int] = None
+    url: Optional[str] = None
     
     class Config():
         orm_mode = True
     
 class ShowImage(BaseModel):
     id: int
-    url: Optional[str]
-    
+    url: Optional[str] = None
+    blob_name: Optional[str] = None
+
     class Config():
         orm_mode = True
 
@@ -97,14 +99,14 @@ class ShowAddress(Address):
         orm_mode = True
 
 class Destination(BaseModel):
-    id: Optional[int]  # Thêm id để đồng bộ với ORM
-    name: Optional[str]
-    price_bottom: Optional[int]
-    price_top: Optional[int]
-    date_create: Optional[date]
-    age: Optional[int]
-    opentime: Optional[time]
-    duration: Optional[int]
+    user_id: Optional[int]
+    name : Optional[str]
+    price_bottom : Optional[int]  
+    price_top : Optional[int]  
+    date_create : Optional[date] 
+    age : Optional[int]  
+    opentime : Optional[time]
+    duration : Optional[int] 
     description: Optional[str] = None
     average_rating: Optional[float] = 0.0  # Thêm trường
     review_count: Optional[int] = 0         # Thêm trường
@@ -125,6 +127,17 @@ class Restaurant(BaseModel):
         default=None,
         description="Special dietary options that the restaurant can accommodate (e.g., vegan, gluten-free, etc.)"
     )
+    
+    feature: Optional[str] = Field(
+        default=None,
+        description="Feature of restaurant (e.g., outdoor sitting, private dinning, dinner, etc.)"
+    )
+    meal: Optional[str] = Field(
+        default=None,
+        description="Feature of restaurant (e.g., outdoor sitting, private dinning, dinner, etc.)"
+    )
+
+    
 
 class Hotel(BaseModel):
     property_amenities: Optional[str]
@@ -132,7 +145,7 @@ class Hotel(BaseModel):
     room_types: Optional[str]
     hotel_class: int
     hotel_styles: Optional[str]
-    Languages: Optional[str]
+    languages: Optional[str]
     phone: Optional[str]
     email: Optional[str]
     website: Optional[str]
@@ -154,7 +167,9 @@ class Review(BaseModel):
     title :str 
     content :str 
     rating : float
+    language: str
     date_create :date
+    companion: str
     
 
     
@@ -249,6 +264,10 @@ class ShowDestination(Destination):
 class ShowDestinationTag(Destination):
     id: int
     tags: Optional[List[ShowTag]] = None    
+
+class UserCountByMonth(BaseModel):
+    month:Optional[int] = None
+    user_count: int
     
     class Config():
         orm_mode = True
@@ -280,3 +299,9 @@ class DestinationBase(BaseModel):
     average_rating: float
     review_count: int
     popularity_score: float
+class UserCountDetail(BaseModel):
+    day: Optional[int] = None
+    user_count: int
+    
+    class Config():
+        orm_mode = True

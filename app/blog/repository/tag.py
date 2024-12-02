@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from blog import models, schemas
 from fastapi import HTTPException, status
-
+from sqlalchemy import func
 
 
 def create_tag(request: schemas.Tag, db: Session):
@@ -17,7 +17,7 @@ def create_tag(request: schemas.Tag, db: Session):
 
 def get_all_tags(db: Session):
     try:
-        return db.query(models.Tag).all()
+        return db.query(models.Tag).distinct().all()
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=f"Error retrieving tags: {str(e.detail)}")
@@ -76,3 +76,20 @@ def add_tag_to_destination(tag_id: int, dest_id: int, db: Session):
     except Exception as e:
         db.rollback()  # Hoàn tác nếu có lỗi khác
         raise ValueError(str(e.detail))
+    
+def get_destination_num_of_each_tag(db: Session):
+    try:
+        results = (
+            db.query(
+                models.Tag.id,
+                models.Tag.name,
+                func.count(models.Destination.id).label('destination_count')
+            )
+            .join(models.Destination.tags)  # Kết hợp với mối quan hệ
+            .group_by(models.Tag.id)
+            .all()
+        )
+        return results
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail=f"Error retrieving destinations count: {str(e)}")

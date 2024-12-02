@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from blog import models, schemas
 from fastapi import HTTPException, UploadFile, status
 from blog.hashing import Hash
-from blog.repository.image import ImageHandler
+from blog.repository.image_handler import ImageHandler
 
 from blog.repository import destination
 
@@ -23,7 +23,9 @@ def create_by_destinationID(destination_id: int, request:schemas.Restaurant, db:
         destination = db.query(models.Destination).filter(models.Destination.id == destination_id).first()  # Chờ truy vấn
         new_restaurant = models.Restaurant(
             cuisine = request.cuisine,
-            special_diet = request.special_diet
+            special_diet = request.special_diet,
+            feature = request.feature,
+            meal = request.meal,
         )
         db.add(new_restaurant)
         db.commit()  # Chờ hoàn tất việc commit
@@ -42,7 +44,9 @@ def create_hotel_of_destination(destination: models.Destination, request:schemas
     try:
         new_restaurant = models.Restaurant(
             cuisine = request.cuisine,
-            special_diet = request.special_diet
+            special_diet = request.special_diet,
+            feature = request.feature,
+            meal = request.meal,
         )
         db.add(new_restaurant)
         db.commit()  # Chờ hoàn tất việc commit
@@ -67,6 +71,8 @@ def update_restaurant_info_by_id(id:int, request: schemas.Restaurant, db: Sessio
 
         restaurant.cuisine = request.cuisine
         restaurant.special_diet = request.special_diet
+        restaurant.feature = request.feature
+        restaurant.meal = request.meal
         db.commit()  # Chờ hoàn tất việc commit
         db.refresh(restaurant)  # Chờ làm mới đối tượng mới
         return restaurant
@@ -91,7 +97,11 @@ def delete_by_id(id: int, db: Session):
                             detail=f"Error deleting restaurant: {str(e.detail)}")
 
     
-def filter_restaurant(restaurants: list[models.Destination], db: Session,  cuisines = [str], special_diets = [str]):
+def filter_restaurant(restaurants: list[models.Destination],
+                      db: Session,
+                      cuisines = [str], special_diets = [str],
+                      meals = [str],
+                      features = [str]):
     
     # Lọc khách sạn theo các tiêu chí
     filtered_restaurants = []
@@ -107,6 +117,17 @@ def filter_restaurant(restaurants: list[models.Destination], db: Session,  cuisi
             diets_list = [diet.strip().lower() for diet in restaurant.special_diet.split(',')]
             if not all(diet.lower() in diets_list for diet in special_diets):
                 continue 
+            
+        if meals:
+            meals_list = [meal.strip().lower() for meal in restaurant.meal.split(',')]
+            if not all(meal.lower() in meals_list for meal in meals):
+                continue
+        
+        if features:
+            features_list = [feat.strip().lower() for feat in restaurant.feature.split(',')]
+            if not all(feat.lower() in features_list for feat in features):
+                continue
+        
         
         filtered_restaurants.append(dest)
     return filtered_restaurants
@@ -116,10 +137,11 @@ def filter_restaurant(restaurants: list[models.Destination], db: Session,  cuisi
 
    
 def get_restaurant_info(id: int, db: Session):
-    print(id)
     dest = db.query(models.Destination).filter(models.Destination.restaurant_id == id).first()
     if not dest:
         return {"error": "Destination not found"}
+    
+    
     result = schemas.ShowDestination.from_orm(dest).dict()
     rating_info = destination.get_ratings_and_reviews_number_of_destinationID(dest.id, db)
     result.update({

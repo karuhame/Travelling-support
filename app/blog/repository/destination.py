@@ -5,10 +5,11 @@ from sqlalchemy.orm import Session
 from blog import models, schemas
 from fastapi import HTTPException, UploadFile, status
 from blog.hashing import Hash
-from blog.repository.image import ImageHandler
 import blog.repository.user as user
 from datetime import datetime
 from typing import List
+from blog.repository.image_handler import ImageHandler
+from blog.repository import image
 
 def create_address_of_destination(db: Session, destination: models.Destination, address):
     try:
@@ -73,6 +74,7 @@ def create_address_of_destination(db: Session, destination: models.Destination, 
 def create(request, db: Session):
     try:
         new_destination = models.Destination(
+            user_id = request.user_id,
             name=request.name,
             price_bottom=request.price_bottom,
             price_top=request.price_top,
@@ -202,6 +204,7 @@ def update_by_id(id: int, request: schemas.Destination, db: Session):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                                 detail=f"destination with the id {id} is not available")
 
+        destination.user_id=request.user_id,
         destination.name =request.name
         destination.price_bottom =request.price_bottom
         destination.price_top =request.price_top
@@ -222,9 +225,11 @@ def update_by_id(id: int, request: schemas.Destination, db: Session):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=f"Error updating destination: {str(e)}")
 
-def delete_by_id(id: int, db: Session):
+async def delete_by_id(id: int, db: Session):
     try:
         destination = db.query(models.Destination).filter(models.Destination.id == id).first()  # Chờ truy vấn
+        for img in destination.images:
+            await image.delete_image(db=db, id=img.id)
         if not destination:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                                 detail=f"destination with the id {id} is not available")
@@ -237,14 +242,17 @@ def delete_by_id(id: int, db: Session):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=f"Error deleting destination: {str(e)}")
 
-
-
 def get_ratings_and_reviews_number_of_destinationID(destination_id: int, db: Session):
-    reviews = db.query(models.Review).filter(models.Review.destination_id == destination_id).all()
-    if reviews:
+    # Lấy ra tất cả các rating cho destination_id cụ thể
+    ratings = db.query(models.Review.rating).filter(models.Review.destination_id == destination_id).all()
+    
+    if ratings:
+        # Chuyển đổi từ danh sách tuple thành danh sách rating
+        ratings_list = [rating[0] for rating in ratings]
+
         # Tính tổng số điểm và số lượng đánh giá
-        total_ratings = sum(review.rating for review in reviews)
-        quantity_of_reviews = len(reviews)
+        total_ratings = sum(ratings_list)
+        quantity_of_reviews = len(ratings_list)
         average_rating = total_ratings / quantity_of_reviews
 
         # Tính điểm theo công thức
@@ -259,44 +267,7 @@ def get_ratings_and_reviews_number_of_destinationID(destination_id: int, db: Ses
             "ratings": 0,
             "numberOfReviews": 0
         }
-     
 
-
-async def add_images_to_destination(db: Session, images: list[UploadFile], destination_id: int):
-    imageHandler = ImageHandler()
-
-    for image in images:
-
-        img_file_name = ImageHandler.save_image(image=image, file_location=f"travel-image/destinations/{destination_id}.png")
-        print(img_file_name)
-        try:
-            # Tạo đối tượng Image mới
-            img = models.Image(
-                destination_id=destination_id
-            )
-            db.add(img)  # Thêm vào session
-            db.commit()  # Lưu lại để lấy id của image                        
-            db.refresh(img)  # Làm mới đối tượng để lấy id
-
-            # Tải lên hình ảnh lên Azure
-            blob_name = f"destinations/{destination_id}/{img.id}.png"  # Tên blob
-            await imageHandler.upload_to_azure(img_file_name, blob_name)  # Tải lên Azure
-
-            # Lấy URL hình ảnh từ Azure
-            url = imageHandler.get_image_url(blob_name_prefix=f"destinations/{destination_id}", img_file_name=f"{img.id}.png")
-            
-            # Gán URL cho đối tượng hình ảnh
-            img.url = url
-            db.add(img)  # Thêm lại vào session
-            db.commit()  # Lưu lại
-            db.refresh(img)  # Làm mới đối tượng
-                
-        except Exception as e:
-            db.rollback()
-            print(f"Could not process image {img_file_name}: {e}")
-    
-    return {"status": "success", "destinationRestaurant_id": destination_id}
-        
 def get_popular_destinations_by_city_ID(city_id: int, db: Session):
     # Truy vấn để lấy danh sách các điểm đến phổ biến
     popular_destinations = (
