@@ -2,6 +2,7 @@ from typing import List, Optional
 from fastapi import UploadFile
 from pydantic import BaseModel, Field
 from datetime import date, time
+
 class BlogBase(BaseModel):
     title: str
     body: str
@@ -10,6 +11,7 @@ class Blog(BlogBase):
     id: int
     class Config():
         orm_mode = True
+
 class UserInfoBase(BaseModel):
     description: str# Thông tin mô tả doanh nghiệp
     phone_number: str
@@ -69,6 +71,7 @@ class ShowImage(BaseModel):
     
     class Config():
         orm_mode = True
+
 class City(BaseModel):
     name: str
     description: str
@@ -92,18 +95,24 @@ class ShowAddress(Address):
     
     class Config():
         orm_mode = True
+
 class Destination(BaseModel):
-    name : Optional[str]
-    price_bottom : Optional[int]  
-    price_top : Optional[int]  
-    date_create : Optional[date] 
-    age : Optional[int]  
-    opentime : Optional[time]
-    duration : Optional[int] 
+    id: Optional[int]  # Thêm id để đồng bộ với ORM
+    name: Optional[str]
+    price_bottom: Optional[int]
+    price_top: Optional[int]
+    date_create: Optional[date]
+    age: Optional[int]
+    opentime: Optional[time]
+    duration: Optional[int]
     description: Optional[str] = None
-    
-    class Config():
+    average_rating: Optional[float] = 0.0  # Thêm trường
+    review_count: Optional[int] = 0         # Thêm trường
+    popularity_score: Optional[float] = 0.0 # Thêm trường
+
+    class Config:
         orm_mode = True
+
 class Destination_Address(Address, Destination):
     pass
 
@@ -147,8 +156,7 @@ class Review(BaseModel):
     rating : float
     date_create :date
     
-    
-    
+
     
 class ShowReview(Review):
     id: int
@@ -237,3 +245,38 @@ class ShowDestination(Destination):
     
     class Config():
         orm_mode = True
+
+class ShowDestinationTag(Destination):
+    id: int
+    tags: Optional[List[ShowTag]] = None    
+    
+    class Config():
+        orm_mode = True
+
+
+class UserDestinationLikeBase(BaseModel):
+    user_id: int
+    destination_id: int
+
+class UserDestinationLikeCreate(UserDestinationLikeBase):
+    pass
+
+class UserDestinationLikeResponse(UserDestinationLikeBase):
+    class Config:
+        orm_mode = True
+
+class DestinationStats(BaseModel):
+    destination_id: int
+    name: str
+    average_rating: float
+    review_count: int
+    popularity_score: float
+    
+    class Config:
+        orm_mode = True
+
+class DestinationBase(BaseModel):
+    name: str
+    average_rating: float
+    review_count: int
+    popularity_score: float

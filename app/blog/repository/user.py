@@ -3,6 +3,8 @@ from blog import models, schemas
 from fastapi import HTTPException, status
 from blog.hashing import Hash
 from typing import Optional
+from collections import Counter
+from blog.repository.destination import get_tags_by_id
 
 def create(request: schemas.User, db: Session):
     try:
@@ -126,3 +128,55 @@ def get_user_by_email(email: str, db: Session) -> Optional[models.User]:
     Trả về None nếu không tìm thấy user, không raise exception.
     """
     return db.query(models.User).filter(models.User.email == email).first()
+
+
+
+
+
+
+def has_liked(user_id: int, destination_id: int, db: Session) -> bool:
+    like = db.query(models.UserDestinationLike).filter_by(user_id=user_id, destination_id=destination_id).first()
+    return like is not None
+
+def like_destination(user_id: int, destination_id: int, db: Session):
+    if has_liked(user_id, destination_id, db):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User has already liked this destination.")
+    
+    new_like = models.UserDestinationLike(user_id=user_id, destination_id=destination_id)
+    db.add(new_like)
+    db.commit()
+    db.refresh(new_like)
+    return new_like
+
+def unlike_destination(user_id: int, destination_id: int, db: Session):
+    like = db.query(models.UserDestinationLike).filter_by(user_id=user_id, destination_id=destination_id).first()
+    if not like:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User has not liked this destination.")
+    
+    db.delete(like)
+    db.commit()
+    return {"detail": "Like removed successfully."}
+
+def get_liked_destinations(user_id: int, db: Session):
+    likes = db.query(models.UserDestinationLike).filter_by(user_id=user_id).all()
+    return [like.destination_id for like in likes]
+
+
+def count_tags_for_user(user_id: int, db: Session):
+    try:
+        # Get destinations liked by the user
+        liked_destinations = get_liked_destinations(user_id, db)
+        
+        # Initialize a counter for tags
+        tag_counter = Counter()
+
+        for destination_id in liked_destinations:
+            tags = get_tags_by_id(destination_id, db)
+            if tags and "tags" in tags:
+                tag_counter.update(tag.id for tag in tags["tags"])
+        
+        return dict(tag_counter)
+    
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail=f"Error counting tags: {str(e)}")

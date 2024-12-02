@@ -1,10 +1,14 @@
-from typing import List
-from sqlalchemy import func
+import math
+from typing import List, Optional
+from sqlalchemy import func,desc
 from sqlalchemy.orm import Session
 from blog import models, schemas
 from fastapi import HTTPException, UploadFile, status
 from blog.hashing import Hash
 from blog.repository.image import ImageHandler
+import blog.repository.user as user
+from datetime import datetime
+from typing import List
 
 def create_address_of_destination(db: Session, destination: models.Destination, address):
     try:
@@ -40,9 +44,34 @@ def create_address_of_destination(db: Session, destination: models.Destination, 
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=f"Error creating address: {str(e)}")
 
+# def create(request, db: Session):
+#     try:
+#         # Tạo điểm đến mới
+#         new_destination = models.Destination(
+#             name=request.name,
+#             price_bottom=request.price_bottom,
+#             price_top=request.price_top,
+#             date_create=request.date_create,
+#             age=request.age,
+#             opentime=request.opentime,
+#             duration=request.duration,
+#             description=request.description
+
+#         )
+        
+#         # Thêm điểm đến vào cơ sở dữ liệu
+#         db.add(new_destination)
+#         db.commit()  # Commit để lưu điểm đến
+#         db.refresh(new_destination)  # Làm mới đối tượng mới
+
+#         return new_destination
+#     except Exception as e:
+#         db.rollback()
+#         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#                             detail=f"Error creating destination: {str(e)}")
+
 def create(request, db: Session):
     try:
-        # Tạo điểm đến mới
         new_destination = models.Destination(
             name=request.name,
             price_bottom=request.price_bottom,
@@ -51,20 +80,21 @@ def create(request, db: Session):
             age=request.age,
             opentime=request.opentime,
             duration=request.duration,
-            description=request.description
-
+            description=request.description,
+            average_rating=0.0,
+            review_count=0,
+            popularity_score=0.0
         )
         
-        # Thêm điểm đến vào cơ sở dữ liệu
         db.add(new_destination)
-        db.commit()  # Commit để lưu điểm đến
-        db.refresh(new_destination)  # Làm mới đối tượng mới
-
+        db.commit()
+        db.refresh(new_destination)
         return new_destination
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail=f"Error creating destination: {str(e)}")
+                          detail=f"Error creating destination: {str(e)}")
+    
 def get_by_id(id: int, db: Session):
     try:
         destination = db.query(models.Destination).filter(models.Destination.id == id).first()
@@ -95,7 +125,18 @@ def get_by_id(id: int, db: Session):
         db.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=f"Error retrieving destination: {str(e)}")
-
+    
+def get_tags_by_id(id: int, db: Session):
+    try:
+        destination = db.query(models.Destination).filter(models.Destination.id == id).first()  
+        if not destination:
+            return None
+        return {"tags": destination.tags}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail=f"Error retrieving destination: {str(e)}")
+    
 def get_by_city_id(city_id: int, db: Session):
     try:
         destinations = db.query(models.Destination).join(models.Address).filter(models.Address.city_id == city_id).all()
@@ -318,3 +359,283 @@ def get_by_tags(db:Session, tag_ids = list[int]):
         # Bắt các lỗi khác
         print(f"An error occurred: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
+
+
+
+def get_like_count(destination_id: int, db: Session) -> int:
+    return db.query(models.UserDestinationLike).filter_by(destination_id=destination_id).count()
+
+
+
+
+def calculate_popularity_score(avg_rating: float, review_count: int) -> float:
+    if review_count == 0:
+        return 0
+    return avg_rating * math.log(1 + review_count)
+
+
+def update_destination_rating(destination_id: int, db: Session):
+    try:
+        rating_stats = db.query(
+            func.avg(models.Review.rating).label('avg_rating'),
+            func.count(models.Review.id).label('review_count')
+        ).filter(
+            models.Review.destination_id == destination_id
+        ).first()
+
+        destination = db.query(models.Destination).filter(
+            models.Destination.id == destination_id
+        ).first()
+
+        if not destination:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Destination not found"
+            )
+
+        destination.average_rating = rating_stats.avg_rating or 0
+        destination.review_count = rating_stats.review_count or 0
+        destination.popularity_score = calculate_popularity_score(
+            destination.average_rating,
+            destination.review_count
+        )
+
+        db.commit()
+        return destination
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error updating destination rating: {str(e)}"
+        )
+    
+def update_all_destination_ratings(db: Session):
+    try:
+        # Get all destination IDs
+        destinations = db.query(models.Destination.id).all()
+        
+        # Update ratings for each destination
+        for dest_id in destinations:
+            update_destination_rating(dest_id[0], db)
+            
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error updating all destination ratings: {str(e)}"
+        )
+
+def get_top_destinations(db: Session, limit: int = 10, min_reviews: int = 3):
+    try:
+        return db.query(models.Destination).filter(
+            models.Destination.review_count >= min_reviews
+        ).order_by(
+            desc(models.Destination.popularity_score)
+        ).limit(limit).all()
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching top destinations: {str(e)}"
+        )
+    
+
+def get_destinations_by_rating_range(
+    db: Session, 
+    min_rating: float = 0, 
+    max_rating: float = 5,
+    min_reviews: int = 2
+):
+    try:
+        return db.query(models.Destination).filter(
+            models.Destination.average_rating >= min_rating,
+            models.Destination.average_rating <= max_rating,
+            models.Destination.review_count >= min_reviews
+        ).order_by(
+            desc(models.Destination.popularity_score)
+        ).all()
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching destinations by rating: {str(e)}"
+        )
+    
+def get_destination_stats(db: Session, destination_id: int):
+    """Lấy thống kê chi tiết về rating của một destination"""
+    try:
+        destination = db.query(models.Destination)\
+                       .filter(models.Destination.id == destination_id)\
+                       .first()
+        if not destination:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Destination {destination_id} not found"
+            )
+            
+        return {
+            "destination_id": destination_id,
+            "name": destination.name,
+            "average_rating": destination.average_rating,
+            "review_count": destination.review_count,
+            "popularity_score": destination.popularity_score
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching destination stats: {str(e)}"
+        )
+def get_top_destinations_by_tag(
+    db: Session, 
+    tag_id: int, 
+    limit: int, 
+    city_id: Optional[int] = None
+) -> List[models.Destination]:
+    try:
+        # Base query
+        query = (
+            db.query(models.Destination)
+            .join(models.DestinationTag)
+            .join(models.Address)  # Join với Address
+            .filter(models.DestinationTag.tag_id == tag_id)
+        )
+
+        # Thêm filter city_id nếu được chỉ định
+        if city_id is not None:
+            query = query.filter(models.Address.city_id == city_id)
+
+        # Thực hiện query
+        top_destinations = (
+            query
+            .order_by(desc(models.Destination.popularity_score))
+            .limit(limit)
+            .all()
+        )
+
+        if not top_destinations:
+            print(f"No destinations found with tag_id {tag_id}" + 
+                  f" and city_id {city_id}" if city_id else "")
+            return []  # Trả về list rỗng thay vì raise exception
+
+        return top_destinations
+
+    except Exception as e:
+        print(f"Error in get_top_destinations_by_tag: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving top destinations: {str(e)}"
+        )
+
+
+def get_top_destination_ids_by_tag(
+    db: Session, 
+    tag_id: int, 
+    limit: int, 
+    city_id: Optional[int] = None
+) -> List[int]:
+    try:
+        # Base query
+        query = (
+            db.query(models.Destination.id)
+            .join(models.DestinationTag)
+            .join(models.Address)  # Join với Address
+            .filter(models.DestinationTag.tag_id == tag_id)
+        )
+
+        # Thêm filter city_id nếu được chỉ định
+        if city_id is not None:
+            query = query.filter(models.Address.city_id == city_id)
+
+        # Thực hiện query
+        top_destination_ids = (
+            query
+            .order_by(desc(models.Destination.popularity_score))
+            .limit(limit)
+            .all()
+        )
+
+        # Convert kết quả từ list of tuples thành list of integers
+        return [dest.id for dest in top_destination_ids]
+
+    except Exception as e:
+        print(f"Error in get_top_destination_ids_by_tag: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving top destination ids: {str(e)}"
+        )
+
+def get_recommended_destinations(user_id: int, db: Session, city_id: Optional[int] = None, limit: int = 20):
+    try:
+        # 1. Lấy số lượng mỗi tag từ các destination user đã like
+        tag_counts = user.count_tags_for_user(user_id, db)
+        print(f"\n1. Tag counts from user's liked destinations: {tag_counts}")
+        
+        if not tag_counts:
+            popular_destinations = get_popular_destinations_by_city_ID(city_id, db) if city_id else get_popular_destinations_by_city_ID(None, db)
+            result = [dest["id"] for dest in popular_destinations[:limit]]
+            print(f"\nNo tags found - Returning popular destinations: {result}")
+            return result
+            
+        # 2. Tính toán tỷ lệ cho mỗi tag
+        total_tags = sum(tag_counts.values())
+        tag_proportions = {
+            tag_id: int((count/total_tags) * limit)
+            for tag_id, count in tag_counts.items()
+        }
+        print(f"\n2. Distribution of recommendations per tag: {tag_proportions}")
+        print(f"Total recommendations planned: {sum(tag_proportions.values())}")
+
+        # 3. Lấy danh sách destination_ids đã được like
+        liked_destinations = set(user.get_liked_destinations(user_id, db))
+        print(f"\n3. User's liked destinations: {liked_destinations}")
+        
+        # 4. Xây dựng recommendations cho từng tag
+        recommended_destinations = set()
+        remaining_slots = limit
+        
+        # Sắp xếp tags theo tần suất giảm dần
+        sorted_tags = sorted(tag_proportions.items(), key=lambda x: x[1], reverse=True)
+        print(f"\n4. Tags sorted by frequency: {sorted_tags}")
+        
+        for tag_id, proportion in sorted_tags:
+            if remaining_slots <= 0:
+                break
+                
+            print(f"\nProcessing tag_id: {tag_id}, target proportion: {proportion}")
+            
+            # Lấy top destinations cho tag hiện tại
+            top_destinations = set(get_top_destinations_by_tag(db, tag_id, proportion))
+            print(f"Top destinations found for tag {tag_id}: {top_destinations}")
+            
+            # Lọc bỏ các destinations đã recommend hoặc đã like
+            new_recommendations = top_destinations - recommended_destinations - liked_destinations
+            print(f"New unique recommendations: {new_recommendations}")
+            
+            # Thêm recommendations mới theo số lượng được phân bổ
+            recommendations_to_add = list(new_recommendations)[:proportion]
+            recommended_destinations.update(recommendations_to_add)
+            
+            remaining_slots -= len(recommendations_to_add)
+            print(f"Added {len(recommendations_to_add)} destinations, remaining slots: {remaining_slots}")
+
+        # 5. Điền các slots còn trống bằng popular destinations
+        if remaining_slots > 0:
+            print(f"\n5. Filling remaining {remaining_slots} slots with popular destinations")
+            popular_destinations = get_popular_destinations_by_city_ID(city_id, db) if city_id else get_popular_destinations_by_city_ID(None, db)
+            popular_ids = set(dest["id"] for dest in popular_destinations)
+            additional_recommendations = popular_ids - recommended_destinations - liked_destinations
+            final_additions = list(additional_recommendations)[:remaining_slots]
+            recommended_destinations.update(final_additions)
+            print(f"Added popular destinations: {final_additions}")
+
+        final_result = list(recommended_destinations)
+        print(f"\nFinal recommendations: {final_result}")
+        print(f"Total recommendations: {len(final_result)}")
+        
+        return final_result
+
+    except Exception as e:
+        print(f"\nError occurred: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error getting recommendations: {str(e)}"
+        )

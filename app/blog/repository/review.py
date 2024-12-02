@@ -3,8 +3,23 @@ from blog import models, schemas
 from fastapi import HTTPException, UploadFile, status
 from blog.hashing import Hash
 from blog.repository.image import ImageHandler
+from . import destination
+
+# them update rating cho destination
 def create_by_userId_destinationId(user_id: int, destination_id: int,  request: schemas.Review, db: Session):
     try:
+        # Kiểm tra xem user đã review destination này chưa
+        existing_review = db.query(models.Review).filter(
+            models.Review.user_id == user_id,
+            models.Review.destination_id == destination_id
+        ).first()
+        
+        if existing_review:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User has already reviewed this destination"
+            )
+
         new_review = models.Review(
             title = request.title,
             content = request.content,
@@ -16,10 +31,14 @@ def create_by_userId_destinationId(user_id: int, destination_id: int,  request: 
         db.add(new_review)
         db.commit()  # Chờ hoàn tất việc commit
         db.refresh(new_review)  # Chờ làm mới đối tượng mới
+        
+        # Cập nhật rating của destination
+        destination.update_destination_rating(destination_id=destination_id, db=db)
         return new_review
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=f"Error creating review: {str(e)}")
+    
 
 def get_by_id(id: int, db: Session):
     try:
@@ -51,12 +70,19 @@ def get_reviews_of_user_in_1_destination_by_userId_and_destinationID(destination
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=f"Error retrieving reviews: {str(e)}")
+    
+# them update rating cho destination
 def update_by_id(id: int, request: schemas.Review, db: Session):
     try:
         review = db.query(models.Review).filter(models.Review.id == id).first()  # Chờ truy vấn
         if not review:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                                detail=f"review with the id {id} is not available")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Review with the id {id} is not available"
+            )
+
+        # Lưu destination_id trước khi cập nhật
+        destination_id = review.destination_id
 
         review.title = request.title
         review.content = request.content
@@ -65,25 +91,58 @@ def update_by_id(id: int, request: schemas.Review, db: Session):
     
         db.commit()  # Chờ hoàn tất việc commit
         db.refresh(review)  # Chờ làm mới đối tượng mới
+          
+          # Cập nhật rating của destination
+        destination.update_destination_rating(destination_id=destination_id, db=db)
         return review
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail=f"Error updating review: {str(e)}")
-
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error updating review: {str(e)}"
+        )
+    
+# them update rating cho destination
 def delete_by_id(id: int, db: Session):
     try:
-        review = db.query(models.Review).filter(models.Review.id == id).first()  # Chờ truy vấn
+        review = db.query(models.Review).filter(models.Review.id == id).first()
         if not review:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                                detail=f"review with the id {id} is not available")
+                              detail=f"review with the id {id} is not available")
 
-        db.delete(review)  # Chờ xóa đối tượng
-        db.commit()  # Chờ hoàn tất việc commit
+        destination_id = review.destination_id
+        db.delete(review)
+        db.commit()
+
+        # Sửa thứ tự tham số khi gọi hàm
+        destination.update_destination_rating(destination_id=destination_id, db=db)
         return {"detail": "review deleted successfully"}
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail=f"Error deleting review: {str(e)}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error deleting review: {str(e)}"
+        )
 
+# async def delete_by_id(id: int, db: Session):
+#     try:
+#         review = db.query(models.Review).filter(models.Review.id == id).first()  # Chờ truy vấn
+#         for img in review.images:
+#             await image.delete_image(db=db, id=img.id)
+#         if not review:
+#             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+#                                 detail=f"review with the id {id} is not available")
+#         destination_id = review.destination_id
+
+#         db.delete(review)  # Chờ xóa đối tượng
+#         db.commit()  # Chờ hoàn tất việc commit
+#         destination.update_destination_rating(db, destination_id)
+
+#         return {"detail": "review deleted successfully"}
+#     except Exception as e:
+#         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#                             detail=f"Error deleting review: {str(e)}")
+    
 async def add_images_to_review(db: Session, images: list[UploadFile], review_id: int):
     local_filenames = []
     imageHandler = ImageHandler()
