@@ -293,3 +293,14 @@ async def delete_destination_by_id(id: int, db: Session = Depends(get_db)):
     
 #     file_names = [file.filename for file in files]
 #     return {"file_names": file_names}
+
+@router.get('/rating-distribution/{destination_id}')
+def get_destination_rating_distribution(
+    destination_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Get the distribution of ratings for a specific destination
+    Returns a dictionary with rating counts for each star rating (1-5)
+    """
+    return destination.get_rating_distribution(destination_id, db)
