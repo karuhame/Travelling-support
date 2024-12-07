@@ -43,7 +43,7 @@ def get_all_hotels(
     db: Session = Depends(get_db),
     price_range: list[str] = Query(default=[], alias='price_range'
                                    , description="Danh sách các khoảng giá (ví dụ: 'low', 'middle', 'high')"),
-    amenities: list[str] = Query(default=[], alias='amenities'),
+    amenities: list[str] = Query(default=[  ], alias='amenities'),
     hotel_star: list[int] = Query(default=[], alias='hotel_star')
 ):
     

@@ -4,7 +4,7 @@ from fastapi import APIRouter, Body, File, HTTPException, Path, Query, UploadFil
 from .. import database, schemas, models
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, status
-from ..repository import destination, image
+from ..repository import destination, user,image
 
 router = APIRouter(
     prefix="/destination",
@@ -31,6 +31,7 @@ def get_by_tag_lists(
         final_results.append(result)
 
     return final_results
+
 
 @router.post("/",
              )
@@ -198,7 +199,85 @@ def get_destination(
     return final_results
 
 
-@router.delete("/{id}")
+
+
+@router.get('/{destination_id}/like_count', response_model=int)
+def get_destination_like_count(destination_id: int, db: Session = Depends(get_db)):
+    return destination.get_like_count(destination_id, db)
+
+
+@router.get("/{id}/get_tags_byid")
+def get_destination_by_id(
+    id: int = None,    
+    db: Session = Depends(get_db)
+):
+    dest = destination.get_tags_by_id(id, db)
+    if not dest:
+        return {"error": "Destination not found"}
+    return dest
+
+
+
+@router.get("/top", response_model=List[schemas.Destination])
+def get_top_destinations(
+    limit: int = 10, 
+    min_reviews: int = 3,
+    db: Session = Depends(get_db)
+):
+    """Get top destinations sorted by popularity score"""
+    return destination.get_top_destinations(db, limit, min_reviews)
+
+@router.get("/by-rating", response_model=List[schemas.Destination])
+def get_destinations_by_rating(
+    min_rating: float = 0,
+    max_rating: float = 5,
+    min_reviews: int = 2,
+    db: Session = Depends(get_db)
+):
+    """Get destinations filtered by rating range"""
+    return destination.get_destinations_by_rating_range(
+        db, 
+        min_rating, 
+        max_rating, 
+        min_reviews
+    )
+
+@router.get("/{destination_id}/stats", response_model=schemas.DestinationStats)
+def get_destination_statistics(
+    destination_id: int,
+    db: Session = Depends(get_db)
+):
+    """Get detailed statistics for a specific destination"""
+    return destination.get_destination_stats(db, destination_id)
+
+
+@router.get("/top-destinations/{tag_id}")
+def get_top_destinations(
+    tag_id: int,
+    limit: int = Query(default=5, ge=1, le=100),  # Mặc định lấy 5 destinations, giới hạn từ 1-100
+    db: Session = Depends(get_db)
+):
+    return destination.get_top_destinations_by_tag(db, tag_id, limit)
+
+
+@router.get("/top-destination-ids/{tag_id}")
+def get_top_destination_ids(
+    tag_id: int,
+    limit: int = Query(default=5, ge=1, le=100),  # Số lượng kết quả (mặc định là 5)
+    db: Session = Depends(get_db)
+):
+    return destination.get_top_destination_ids_by_tag(db, tag_id, limit)
+
+
+@router.get('/recommendations_bylikes/{user_id}')
+def get_recommendations(
+    user_id: int, 
+    city_id: Optional[int] = None,
+    limit: int = 20,
+    db: Session = Depends(get_db)
+):
+    return destination.get_recommended_destinations(user_id, db, city_id, limit)
+
 async def delete_destination_by_id(id: int, db: Session = Depends(get_db)):
     return await destination.delete_by_id(id, db)
 

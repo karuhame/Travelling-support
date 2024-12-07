@@ -14,6 +14,9 @@ from blog import repository
 from blog import models
 from . import schemas  # Import schemas nếu cần
 from blog.repository.image_handler import ImageHandler
+from blog.repository.image import ImageHandler
+# from blog.repository import destination
+
 # DATABASE_URL=mysql+pymysql://travel_user:password@localhost:3306/db_connect
 # cnx = mysql.connector.connect(user="travel_user", password="{your_password}", host="travel-sql.mysql.database.azure.com", port=3306, database="{your_database}", ssl_ca="{ca-cert filename}", ssl_disabled=False)
 
@@ -124,8 +127,10 @@ async def create_sample_data():
                 db.refresh(city)
                 
                 # crawl data cho city
-                await ImageHandler.crawl_image(db=db, city= city)
+                # await ImageHandler.crawl_image(db=db, city= city)
                 # imageHandler.crawl_image(db=db, city=city )
+                # ImageHandler.crawl_image(db=db, city= city)
+                # image.crawl_image(db=db, city=city )
                 
                 # Thêm 1 điểm đến cho mỗi user
                 for j in range(2):
@@ -156,6 +161,8 @@ async def create_sample_data():
                     db.refresh(destination)
                     
                     # await imageHandler.fake_db_destination(db, destination=destination)
+                    imageHandler = ImageHandler()
+                    # imageHandler.fake_db_destination(db, destination=destination)
                     
                     hotel = models.Hotel(
                         property_amenities='Free WiFi, Pool, Gym',
@@ -177,7 +184,7 @@ async def create_sample_data():
                     
                     
                     # Tạo 3-5 reviews cho mỗi destination
-                    num_reviews = random.randint(0, 2)
+                    num_reviews = random.randint(0, 7)
                     for k in range(num_reviews):
                         review = models.Review(
                             title=f"Review {k + 1} for Destination {j + 1}",
@@ -191,10 +198,34 @@ async def create_sample_data():
                         db.commit()
                         db.refresh(review)
                         # await imageHandler.fake_db_review(db, review=review)
+                        # imageHandler.fake_db_review(db, review=review)
                         
-                    
+    
             db.commit()
+            # destination.update_all_destination_ratings(db)
+
+            # for user_id in range(1, 5):
+            #     for destination_id in range(1, 11):
+            #         if random.randint(0, 1) == 1:
+            #             like = models.UserDestinationLike(
+            #                 user_id=user_id,
+            #                 destination_id=destination_id
+            #             )
+            #             db.add(like)
             
+            # # Tạo sample data cho DestinationTag
+            # for destination_id in range(1, 11):
+            #     for tag_id in range(1, 6):
+            #         if random.randint(0, 1) == 1:
+            #             destination_tag = models.DestinationTag(
+            #                 destination_id=destination_id,
+            #                 tag_id=tag_id
+            #             )
+            #             db.add(destination_tag)
+            
+            # db.commit()
+            
+
             # 
             print("Sample data created.")
         else:

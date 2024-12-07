@@ -3,6 +3,7 @@ from blog.database import Base
 from sqlalchemy.orm import relationship
 from datetime import datetime
 
+
 class User(Base):
     __tablename__ = 'user'
     
@@ -23,6 +24,7 @@ class User(Base):
     forum_comments = relationship("ForumComment", back_populates="user")
     city = relationship("City", back_populates="user")
     tours = relationship("Tour", back_populates="user")
+    likes = relationship("UserDestinationLike", back_populates="user")
 
     
 class UserInfo(Base):
@@ -66,6 +68,10 @@ class Destination(Base):
     opentime = Column(Time, nullable=True, default=None)  
     duration = Column(Integer, nullable=True, default=3)  
 
+    average_rating = Column(Float, default=0.0)
+    review_count = Column(Integer, default=0)
+    popularity_score = Column(Float, default=0.0)
+
     # Foreign Key
     user_id = Column(Integer, ForeignKey('user.id', name="fk_destination_user", ondelete='CASCADE'))
     address_id = Column(Integer, ForeignKey('address.id', name="fk_destination_address", ondelete='CASCADE'), nullable=True)
@@ -77,7 +83,6 @@ class Destination(Base):
     user = relationship("User", back_populates="destinations")
     reviews = relationship("Review", back_populates="destination")
     images = relationship("Image", back_populates="destination")
-    
     restaurant = relationship("Restaurant", back_populates="destination", uselist=False)
     hotel = relationship("Hotel", back_populates="destination", uselist=False)
     address = relationship("Address", back_populates="destination", uselist=False)
@@ -85,6 +90,8 @@ class Destination(Base):
     tours = relationship("Tour",secondary="destination_tour", back_populates="destinations")
     journeys = relationship("Journey",secondary="destination_journey", back_populates="destinations")
     tags = relationship("Tag", secondary="destination_tag", back_populates="destinations")
+    likes = relationship("UserDestinationLike", back_populates="destination")
+    
 class Image(Base):
     __tablename__ = 'image'
     
@@ -283,3 +290,12 @@ class ForumComment(Base):
     user = relationship("User", back_populates="forum_comments")
     
 
+class UserDestinationLike(Base):
+    __tablename__ = 'user_destination_likes'
+    
+    user_id = Column(Integer, ForeignKey('user.id'), primary_key=True)
+    destination_id = Column(Integer, ForeignKey('destination.id'), primary_key=True)
+    
+    # Relationships
+    user = relationship("User", back_populates="likes")
+    destination = relationship("Destination", back_populates="likes")
