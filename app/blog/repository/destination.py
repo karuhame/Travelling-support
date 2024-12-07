@@ -97,6 +97,14 @@ def create(request, db: Session):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                           detail=f"Error creating destination: {str(e)}")
     
+def get_by_userID(user_id: int, db: Session):
+    try:
+        destination = db.query(models.Destination).filter(models.Destination.user_id == user_id).all()
+        return destination
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail=f"Error retrieving destination: {str(e)}")    
 def get_by_id(id: int, db: Session):
     try:
         destination = db.query(models.Destination).filter(models.Destination.id == id).first()

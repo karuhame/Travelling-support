@@ -167,18 +167,23 @@ def get_destination_by_id(
 @router.get("/")
 def get_destination(
     city_id: int = None,
-    
+    user_id: int = None,
     is_popular: bool = False,
     get_rating: bool = False,
     db: Session = Depends(get_db)
 ):
     results = []
+
+    if user_id: 
+        results = destination.get_by_userID(user_id=user_id, db=db)
+
+    else:
+        results = destination.get_all(db)
+    
     if city_id:
         results = destination.get_by_city_id(city_id, db)
 
     # Nếu không có id hay city_id, lấy tất cả destinations
-    else:
-        results = destination.get_all(db)
 
     # Nếu cần sắp xếp theo đánh giá
     if is_popular:
