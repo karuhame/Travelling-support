@@ -55,6 +55,13 @@ class SignUp(BaseModel):
     email: str
     password:str
     username: str
+class ShowUserAction(BaseModel):
+    id: int
+    user_id: int
+    action_id: int
+    is_allowed: bool
+    
+    
 
      
 class Image(BaseModel):

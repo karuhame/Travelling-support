@@ -21,3 +21,7 @@ def get_all_action(db: Session = Depends(get_db)):
 def get_action_of_userID(user_id: int, db: Session = Depends(get_db)):
     userAction = action.get_action_of_userID(user_id=user_id, db=db)
     return userAction
+
+@router.post("/{user_action_id}")
+def change_status_by_UserActionID(user_action_id: int,  db: Session = Depends(get_db)):
+    return action.change_status_by_UserActionID(user_action_id=user_action_id, db=db)

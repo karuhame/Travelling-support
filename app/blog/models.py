@@ -42,10 +42,11 @@ class Action(Base):
 class UserAction(Base):
     __tablename__ = 'user_action'
     
+    id = Column(Integer, primary_key=True, index=True)
+
     user_id = Column(Integer, ForeignKey('user.id'), primary_key=True)
     action_id = Column(Integer, ForeignKey('action.id'), primary_key=True)
     is_allowed = Column(Boolean, default=False)
-    
 
     
 class UserInfo(Base):
