@@ -5,7 +5,7 @@ from .. import database, schemas, models
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, status
 from ..repository import destination, user,image
-
+from ..oauth2 import authorize_action
 router = APIRouter(
     prefix="/destination",
     tags=['Destination']
@@ -170,7 +170,8 @@ def get_destination(
     user_id: int = None,
     is_popular: bool = False,
     get_rating: bool = False,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _ = Depends(authorize_action(action_name='SHOW_DESTINATION')),
 ):
     results = []
 
