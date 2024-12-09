@@ -54,6 +54,8 @@ async def create_destination(
     ward: str = None,
     city_id: int = None,
     db: Session = Depends(get_db),
+    _ = Depends(authorize_action(action_name='CREAT_DESTINATION')),
+    
     
 ):
     address = schemas.Address(
@@ -171,7 +173,7 @@ def get_destination(
     is_popular: bool = False,
     get_rating: bool = False,
     db: Session = Depends(get_db),
-    _ = Depends(authorize_action(action_name='SHOW_DESTINATION')),
+    # _ = Depends(authorize_action(action_name='SHOW_DESTINATION')),
 ):
     results = []
 
