@@ -53,9 +53,7 @@ async def create_destination(
     street: str = None,
     ward: str = None,
     city_id: int = None,
-    db: Session = Depends(get_db),
-    _ = Depends(authorize_action(action_name='CREAT_DESTINATION')),
-    
+    db: Session = Depends(get_db),    
     
 ):
     address = schemas.Address(
@@ -286,7 +284,10 @@ def get_recommendations(
 ):
     return destination.get_recommended_destinations(user_id, db, city_id, limit)
 
-async def delete_destination_by_id(id: int, db: Session = Depends(get_db)):
+@router.delete("/{id}")
+async def delete_destination_by_id(id: int, db: Session = Depends(get_db),
+    _ = Depends(authorize_action(action_name='DELETE_DESTINATION')),
+    ):
     return await destination.delete_by_id(id, db)
 
 # @router.post("/uploadfiles/")
