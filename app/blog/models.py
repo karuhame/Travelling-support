@@ -26,8 +26,6 @@ class User(Base):
     tours = relationship("Tour", back_populates="user")
     likes = relationship("UserDestinationLike", back_populates="user")
 
-    actions = relationship("Action", secondary="user_action", back_populates="users")
-
 # Bảng Hành Động
 class Action(Base):
     __tablename__ = 'action'
@@ -35,14 +33,12 @@ class Action(Base):
     id = Column(Integer, primary_key=True, index=True)
     action_name = Column(String, unique=True)
     
-    users = relationship("User", secondary="user_action", back_populates="actions")
-
 
 # Bảng Quyền Người Dùng
 class UserAction(Base):
     __tablename__ = 'user_action'
     
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True,autoincrement=True)
 
     user_id = Column(Integer, ForeignKey('user.id'), primary_key=True)
     action_id = Column(Integer, ForeignKey('action.id'), primary_key=True)
