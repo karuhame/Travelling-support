@@ -25,6 +25,31 @@ def get_current_user(data: str = Depends(oauth2_scheme), db: Session = Depends(d
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User account is banned",
         )
-    
-    print(user.status)
+    token_data.user_id = user.id
+    print(token_data.user_id)
     return token_data  # Trả về đối tượng user thay vì token_data
+
+def authorize_action(action_name: str):
+    def decorator(current_user: schemas.User = Depends(get_current_user),  db: Session = Depends(database.get_db)):
+        # Tìm action_id dựa trên action_name
+        action = db.query(models.Action).filter(models.Action.action_name == action_name).first()
+        print(action.action_name)
+        print(action.id)
+        if not action:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Action not found"
+            )
+        
+        # Kiểm tra quyền hạn của người dùng
+        permission = db.query(models.UserAction).filter(
+            (models.UserAction.user_id == current_user.user_id),
+            (models.UserAction.action_id == action.id)
+        ).first()
+        if not permission or not permission.is_allowed:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to perform this action"
+            )
+        return current_user
+    return decorator

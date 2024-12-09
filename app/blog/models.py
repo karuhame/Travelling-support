@@ -13,7 +13,7 @@ class User(Base):
     email = Column(String(50), unique=True)
     role = Column(String(10), default="guest") #guest/business/admin
     status = Column(String(10), default="enable")
-    created_at = Column(DateTime, default=datetime.utcnow)  # New field
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=True )  # New field
     
     # Relationship
     business_type = relationship("BusinessType", back_populates="user")
@@ -25,6 +25,24 @@ class User(Base):
     city = relationship("City", back_populates="user")
     tours = relationship("Tour", back_populates="user")
     likes = relationship("UserDestinationLike", back_populates="user")
+
+# Bảng Hành Động
+class Action(Base):
+    __tablename__ = 'action'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    action_name = Column(String, unique=True)
+    
+
+# Bảng Quyền Người Dùng
+class UserAction(Base):
+    __tablename__ = 'user_action'
+    
+    id = Column(Integer, primary_key=True, index=True,autoincrement=True)
+
+    user_id = Column(Integer, ForeignKey('user.id'), primary_key=True)
+    action_id = Column(Integer, ForeignKey('action.id'), primary_key=True)
+    is_allowed = Column(Boolean, default=False)
 
     
 class UserInfo(Base):

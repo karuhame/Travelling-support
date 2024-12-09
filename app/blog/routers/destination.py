@@ -5,7 +5,7 @@ from .. import database, schemas, models
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, status
 from ..repository import destination, user,image
-
+from ..oauth2 import authorize_action
 router = APIRouter(
     prefix="/destination",
     tags=['Destination']
@@ -53,7 +53,7 @@ async def create_destination(
     street: str = None,
     ward: str = None,
     city_id: int = None,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db),    
     
 ):
     address = schemas.Address(
@@ -170,7 +170,8 @@ def get_destination(
     user_id: int = None,
     is_popular: bool = False,
     get_rating: bool = False,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    # _ = Depends(authorize_action(action_name='SHOW_DESTINATION')),
 ):
     results = []
 
@@ -283,7 +284,10 @@ def get_recommendations(
 ):
     return destination.get_recommended_destinations(user_id, db, city_id, limit)
 
-async def delete_destination_by_id(id: int, db: Session = Depends(get_db)):
+@router.delete("/{id}")
+async def delete_destination_by_id(id: int, db: Session = Depends(get_db),
+    _ = Depends(authorize_action(action_name='DELETE_DESTINATION')),
+    ):
     return await destination.delete_by_id(id, db)
 
 # @router.post("/uploadfiles/")
