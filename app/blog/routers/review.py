@@ -38,10 +38,14 @@ async def create_by_userId_tourID(
         )
     new_review = review.create_by_userId_tourID(user_id, tour_id, sh_review, db)    
     for img in images:
-        sc_image = schemas.Image(
-            review_id = new_review.id
-        )
-        await image.create_image(db, request=sc_image, image=img)
+        try:
+            sc_image = schemas.Image(
+                review_id = new_review.id
+            )
+            await image.create_image(db, request=sc_image, image=img)
+        except HTTPException as e:
+            # Log the error or handle it accordingly
+            print(f"Failed to upload image: {e.detail}")
     
     return schemas.ShowReview.from_orm(new_review)
 
@@ -128,11 +132,19 @@ def get_by_id(
     rv = review.get_by_id(review_id, db)
     return schemas.ShowReview.from_orm(rv)
 
-
 @router.get("/", 
-            description="Fill destination_id: get all reviews about 1 destination; Fill user_id: get all reviews of 1 user; Fill both user_id and destination_id: get all reviews of 1 user about 1 destination")
+            description=(
+                "### Get Reviews\n\n"
+                "This endpoint allows you to retrieve reviews based on the following criteria:\n\n"
+                "- **Fill `user_id`**: Get all reviews of 1 user;\n"
+                "- **Fill `destination_id`**: Get all reviews about 1 destination;\n"
+                "- **Fill both `user_id` and `destination_id`**: Get all reviews of 1 user about 1 destination;\n"
+                "- **Fill `tour_id`**: Get all reviews about 1 tour;\n"
+                "- **Fill both `user_id` and `tour_id`**: Get all reviews of 1 user about 1 tour;"
+            ))
 def get_reviews(
     destination_id: int = None,
+    tour_id: int = None,
     user_id: int = None,
     language: str = None,
     companion: str = None,
@@ -147,6 +159,12 @@ def get_reviews(
             reviews = review.get_reviews_of_user_in_1_destination_by_userId_and_destinationID(destination_id, user_id, db)
         else:
             reviews = review.get_reviews_of_destination_by_destinationId(destination_id, db)
+    elif tour_id:
+        if user_id:
+            reviews = review.get_reviews_of_user_in_1_tour_by_userId_and_tourID(tour_id, user_id, db)
+        else:
+            reviews = review.get_reviews_of_tour_by_tourId(tour_id, db)
+
     elif user_id:
         reviews = review.get_reviews_userId(user_id=user_id, db=db)
 
