@@ -23,7 +23,10 @@ def create_by_destinationID(destination_id: int, request:schemas.Hotel, db: Sess
             room_types = request.room_types,
             hotel_class = request.hotel_class,
             hotel_styles = request.hotel_styles,
-            languages = request.languages
+            languages = request.languages,
+            phone = request.phone,
+            email = request.email,
+            website = request.website,
         )
         db.add(new_hotel)
         db.commit()  # Chờ hoàn tất việc commit
@@ -45,7 +48,11 @@ def create_hotel_of_destination(destination: models.Destination, request:schemas
             room_types = request.room_types,
             hotel_class = request.hotel_class,
             hotel_styles = request.hotel_styles,
-            languages = request.languages
+            languages = request.languages,
+            phone = request.phone,
+            email = request.email,
+            website = request.website,
+
         )
         db.add(new_hotel)
         db.commit()  # Chờ hoàn tất việc commit
