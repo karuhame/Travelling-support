@@ -1,0 +1,674 @@
+<head>
+    <title>Goong-MapLibre-Web</title>
+    <meta property="og:description" content="Use extrusions to display buildings' height in 3D." />
+    <meta charset='utf-8'>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel='stylesheet' href='https://unpkg.com/maplibre-gl/dist/maplibre-gl.css' />
+    <script src='https://unpkg.com/maplibre-gl/dist/maplibre-gl.js'></script>
+    <!-- <link rel='stylesheet' href='https://unpkg.com/maplibre-gl@4.3.2/dist/maplibre-gl.css' />
+    <script src='https://unpkg.com/maplibre-gl@4.3.2/dist/maplibre-gl.js'></script> -->
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body,
+        #map {
+            height: 100%;
+        }
+
+        .search-box {
+            position: absolute;
+            top: 30px;
+            left: 60px;
+            display: flex;
+            align-items: center;
+        }
+
+        .color-white {
+            color: white;
+            /* width: 70px; */
+            /* height: 35px; */
+        }
+
+        .search-box-input {
+            width: 350px;
+            min-height: 40px;
+            border-left: none;
+            padding: 1px 8px;
+            box-shadow: 1px 1px 1px rgba(0, 0, 0, .1);
+            outline: none;
+            border-radius: 2px 0 0 2px;
+            border: 1px solid transparent;
+        }
+
+        .search-box-btn {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 40px;
+            height: 40px;
+            background-color: #fdffff;
+            box-shadow: 1px 1px 0 rgba(0, 0, 0, .1);
+            /* border-radius: 0 2px 2px 0; */
+            cursor: pointer;
+            /* border-left: 1px solid #cccece; */
+        }
+
+        .clear-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 20px;
+            height: 39px;
+            background-color: #fdffff;
+            box-shadow: 1px 1px 0 rgba(0, 0, 0, .1);
+
+            cursor: pointer;
+            /* border-left: 1px solid #cccece; */
+        }
+
+        .direction-box-btn {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 40px;
+            height: 40px;
+            background-color: #fdffff;
+            box-shadow: 1px 1px 0 rgba(0, 0, 0, .1);
+            border-radius: 0 2px 2px 0;
+            cursor: pointer;
+            border-left: 1px solid #cccece;
+        }
+
+        .search-result {
+            position: absolute;
+            top: 44px;
+            width: 432px;
+            background-color: white;
+            box-shadow: inset 1px 1px 0 rgba(0, 0, 0, .1), inset 0 -1px 0 rgba(0, 0, 0, .07);
+            z-index: 2;
+            border-radius: 2px;
+            padding: 8px;
+            display: none;
+        }
+
+        .result-box {
+            width: 100%;
+            cursor: pointer;
+            margin: 0 0 8px 0;
+        }
+
+        .result-box:hover {
+            background-color: rgb(221, 221, 221);
+        }
+
+        .display-none {
+            display: none;
+        }
+
+        .input-direction-container {
+            /* margin: 30px 0; */
+            position: absolute;
+            display: none;
+            left: 60px;
+            top: 30px
+        }
+
+        .close-directions {
+            margin-left: 10px;
+        }
+
+        .direction {
+            width: 100px;
+            /* height: 40px; */
+        }
+
+        .search-box-direction {
+            width: 350px;
+            height: 40px;
+            border-left: none;
+            padding: 1px 8px;
+            box-shadow: 1px 1px 1px rgba(0, 0, 0, .1);
+            outline: none;
+            border-radius: 2px 0 0 2px;
+            border: 1px solid transparent;
+        }
+
+        #start,
+        #end {
+            width: 300px;
+            /* padding: 15px; */
+            margin-right: 10px;
+            /* margin-left: 10px; */
+        }
+
+        #get-directions {
+            padding: 5px 10px;
+        }
+
+        #coordinates {
+            background: rgba(0, 0, 0, 0.5);
+            color: #fff;
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            padding: 5px 10px;
+            margin: 0;
+            font-size: 11px;
+            line-height: 18px;
+            border-radius: 3px;
+            display: none;
+        }
+
+        .popover-button {
+            position: absolute;
+            padding: 10px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            display: inline-block;
+            background-color: #f9f9f9;
+            left: 60px;
+            top: 80px;
+            width: 95px
+        }
+
+        .popover {
+            left: 60px;
+            top: 125px;
+            display: none;
+            position: absolute;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 10px;
+            z-index: 1000;
+        }
+
+        .popover .map-style-option {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+
+        .popover .map-style-option:last-child {
+            border-bottom: none;
+        }
+
+        .popover .map-style-option:hover {
+            background-color: #f1f1f1;
+        }
+
+        .search-result-start {
+            position: absolute;
+            top: 44px;
+            width: 432px;
+            background-color: white;
+            box-shadow: inset 1px 1px 0 rgba(0, 0, 0, .1), inset 0 -1px 0 rgba(0, 0, 0, .07);
+            z-index: 2;
+            border-radius: 2px;
+            padding: 8px;
+            display: none;
+        }
+
+        .search-result-end {
+            position: absolute;
+            top: 44px;
+            width: 432px;
+            background-color: white;
+            box-shadow: inset 1px 1px 0 rgba(0, 0, 0, .1), inset 0 -1px 0 rgba(0, 0, 0, .07);
+            z-index: 2;
+            border-radius: 2px;
+            padding: 8px;
+            display: none;
+        }
+    </style>
+</head>
+<div id="map"></div>
+
+<div class="search-box" id="search-container">
+    <input class="search-box-input" id="input" autofocus placeholder="Tìm kiếm địa điểm"></input>
+    <div class="search-box-btn">
+        <div class="color-white">
+            <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="20" height="20" viewBox="0 0 50 50">
+                <path
+                    d="M 21 3 C 11.621094 3 4 10.621094 4 20 C 4 29.378906 11.621094 37 21 37 C 24.710938 37 28.140625 35.804688 30.9375 33.78125 L 44.09375 46.90625 L 46.90625 44.09375 L 33.90625 31.0625 C 36.460938 28.085938 38 24.222656 38 20 C 38 10.621094 30.378906 3 21 3 Z M 21 5 C 29.296875 5 36 11.703125 36 20 C 36 28.296875 29.296875 35 21 35 C 12.703125 35 6 28.296875 6 20 C 6 11.703125 12.703125 5 21 5 Z">
+                </path>
+            </svg>
+        </div>
+    </div>
+    <div id="result" class="search-result"></div>
+
+    <div class="direction-box-btn" id="show-get-directions">
+        <!-- <div class="color-white"> -->
+            <img src="corner-up-right.svg" alt="Description of the SVG">
+        <!-- </div> -->
+    </div>
+
+</div>
+
+<button class="popover-button" id="choose-map-style">Map Style</button>
+<div class="popover" id="popover-change-style"></div>
+<div class="input-direction-container" id="get-directions-box">
+    <input type="text" id="start" class="search-box-direction" placeholder="Điểm đầu ">
+    <div id="result-start" class="search-result-start"></div>
+    <input type="text" id="end" class="search-box-direction" placeholder="Điểm cuối ">
+    <div id="result-end" class="search-result-end"></div>
+    <button id="get-directions" class="direction">Dẫn đường</button>
+    <div id="close-directions" class="close-directions">
+        <img src="x.svg" alt="Description of the SVG">
+    </div>
+</div>
+<script>
+    const apiUrl = 'https://rsapi.goong.io';
+    const mapUrl = 'https://tiles.goong.io/assets/';
+    const apiKey = 'ArPlUISaEBAdJFTABi9dcNGcue8WQ4cOAuGcNoBE'; // you need an account to get key from: https://account.goong.io/keys
+    const mapKey = 'tLyW2vk0aY3yfQLu8ZPy986mAgaW8igMYufv3BLY'; // you need an account to get key from: https://account.goong.io/keys
+    
+    const directionVehicle = 'car' // bike, taxi, trunk, hd
+    const center = [105.85242472181584, 21.029579719995272];
+    const zoom = 14;
+    const radiusInMeters = 100; // Radius in meters
+    const mapStyles = [
+        { name: 'Normal', url: `${mapUrl}goong_map_web.json?api_key=${mapKey}` },
+        { name: 'Satellite', url: `${mapUrl}goong_satellite.json?api_key=${mapKey}` },
+        { name: 'Dark', url: `${mapUrl}goong_map_dark.json?api_key=${mapKey}` },
+        { name: 'Light', url: `${mapUrl}navigation_day.json?api_key=${mapKey}` },
+        { name: 'Night', url: `${mapUrl}navigation_night.json?api_key=${mapKey}` }
+    ];
+
+    var map = new maplibregl.Map({
+        container: 'map', // container id
+        style: `${mapUrl}/goong_map_web.json?api_key=${mapKey}`, // style URL
+        center: center, // starting position [lng, lat]
+        zoom: zoom // starting zoom
+    });
+
+    function drawCircle(center, radiusInMeters) {
+        const points = 64;
+        const coords = {
+            latitude: center[1],
+            longitude: center[0]
+        };
+        const km = radiusInMeters / 1000;
+        const ret = [];
+        const distanceX = km / (111.320 * Math.cos(coords.latitude * Math.PI / 180));
+        const distanceY = km / 110.574;
+        let theta, x, y;
+        for (let i = 0; i < points; i++) {
+            theta = (i / points) * (2 * Math.PI);
+            x = distanceX * Math.cos(theta);
+            y = distanceY * Math.sin(theta);
+            ret.push([coords.longitude + x, coords.latitude + y]);
+        }
+        ret.push(ret[0]);
+        return ret;
+    }
+
+    map.on('load', () => {
+
+        // const circleData = {
+        //     'type': 'FeatureCollection',
+        //     'features': [{
+        //         'type': 'Feature',
+        //         'geometry': {
+        //             'type': 'Polygon',
+        //             'coordinates': [drawCircle(center, radiusInMeters)]
+        //         }
+        //     }]
+        // };
+        // map.addSource('circle', {
+        //     'type': 'geojson',
+        //     'data': circleData
+        // });
+        console.log("marker LngLat: ", center)
+        const marker = new maplibregl.Marker()
+            .setLngLat(center)
+            .addTo(map);
+        console.log("Marker đã được thêm:", marker);
+        
+        // map.addLayer({
+        //     id: 'circle',
+        //     type: 'fill',
+        //     source: 'circle',
+        //     layout: {},
+        //     paint: {
+        //         'fill-color': '#588888',
+        //         'fill-opacity': 0.5
+        //     }
+        // });
+    });
+
+    // change style map
+    function renderMapStyleOptions() {
+        const popover = document.getElementById('popover-change-style');
+        mapStyles.forEach(style => {
+            const div = document.createElement('div');
+            div.className = 'map-style-option';
+            div.textContent = style.name;
+            div.onclick = () => changeStyle(style.url, style.name);
+            popover.appendChild(div);
+        });
+    }
+    // Initial render of map style options
+    renderMapStyleOptions();
+    function changeStyle(styleUrl, name) {
+        map.setStyle(styleUrl);
+        document.querySelector('.popover-button').textContent = name;
+        const popover = document.getElementById('popover-change-style');
+        popover.style.display = (popover.style.display === 'block') ? 'none' : 'block';
+    }
+    document.getElementById('choose-map-style').addEventListener('click', function (event) {
+        const popover = document.getElementById('popover-change-style');
+        popover.style.display = (popover.style.display === 'block') ? 'none' : 'block';
+    });
+
+
+    // AUTOCOMPLETE
+    document.getElementById('input').addEventListener('input', function () {
+        const query = this.value;
+        if (query.length >= 2) { // Only fetch if the input has 2 or more characters
+            fetchDataAutoComplete(query);
+        } else {
+            renderArray([]); // Clear results if input is less than 2 characters
+        }
+    });
+
+    function fetchDataAutoComplete(query) {
+        const apiLink = `${apiUrl}/Place/AutoComplete?api_key=${apiKey}&input=${encodeURIComponent(query)}`;
+        fetch(apiLink)
+            .then(response => response.json())
+            .then(data => {
+                if (data.predictions) {
+                    renderArray(data.predictions.map(prediction => prediction));
+                } else {
+                    renderArray([]);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching data:', error);
+                renderArray([]); // Render an empty array in case of error
+            });
+    }
+    function renderArray(data) {
+        const resultContainer = document.getElementById('result');
+        const inputContainer = document.getElementById('input');
+        resultContainer.innerHTML = ''; // Clear previous results
+        if (data.length > 0) {
+            resultContainer.style.display = 'block';
+        } else {
+            resultContainer.style.display = 'none';
+        }
+        data.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'result-box';
+            div.textContent = item.description;
+            div.addEventListener('click', function () {
+                fetchPlaceDetails(item.place_id);
+                resultContainer.style.display = 'none';
+                inputContainer.value = item.description;
+            });
+            resultContainer.appendChild(div);
+        });
+    }
+    function fetchPlaceDetails(placeId) {
+        const apiLink = `${apiUrl}/Place/Detail?api_key=${apiKey}&place_id=${placeId}`;
+        fetch(apiLink)
+            .then(response => response.json())
+            .then(data => {
+                if (data.result) {
+                    const { location } = data.result.geometry;
+                    const lngLat = [location.lng, location.lat];
+                    addMarker(lngLat);
+                    // addMarkerAndCircleAround(lngLat)
+                } else {
+                    console.error('No result found for place details');
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching place details:', error);
+            });
+    }
+    function removeLayer(layerId) {
+        if (map.getLayer(layerId)) {
+            map.removeLayer(layerId);
+        }
+    }
+    function addMarker(lngLat) {
+        new maplibregl.Marker()
+            .setLngLat(lngLat)
+            .addTo(map);
+        map.flyTo({ center: lngLat, zoom: zoom }); //not fly if it is marker in direction
+    }
+    function addMarkerAndCircleAround(lngLat) {
+        // Add marker
+        console.log(lngLat)
+        new maplibregl.Marker()
+            .setLngLat(lngLat)
+            .addTo(map);
+        // Draw circle
+        if (map.getLayer('circle')) {
+            map.removeLayer('circle');
+            map.removeSource('circle');
+        }
+        const circleData = {
+            'type': 'FeatureCollection',
+            'features': [{
+                'type': 'Feature',
+                'geometry': {
+                    'type': 'Polygon',
+                    'coordinates': [drawCircle(lngLat, radiusInMeters)]
+                }
+            }]
+        };
+        map.addSource('circle', {
+            'type': 'geojson',
+            'data': circleData
+        });
+        map.addLayer({
+            'id': 'circle',
+            'type': 'fill',
+            'source': 'circle',
+            'layout': {},
+            'paint': {
+                'fill-color': '#588888',
+                'fill-opacity': 0.5
+            }
+        });
+        // fly to this location 
+        map.flyTo({ center: lngLat, zoom: zoom });
+    }
+
+
+    // DIRECTION
+    document.getElementById('show-get-directions').addEventListener('click', function () {
+        const showDirectionContainer = document.getElementById('get-directions-box');
+        const showSearchContainer = document.getElementById('search-container');
+        const inputSearchAutocomplete = document.getElementById('input');
+        showDirectionContainer.style.display = 'flex';
+        showSearchContainer.style.display = 'none';
+        inputSearchAutocomplete.value = null
+    });
+    document.getElementById('close-directions').addEventListener('click', function () {
+        const showDirectionContainer = document.getElementById('get-directions-box');
+        const showSearchContainer = document.getElementById('search-container');
+        const inputStartDirection = document.getElementById('start');
+        const inputEndDirection = document.getElementById('end');
+        showDirectionContainer.style.display = 'none';
+        showSearchContainer.style.display = 'flex';
+        inputStartDirection.value = null;
+        inputEndDirection.value = null;
+        removeLayer('route')
+
+    });
+
+    const routes = []; 
+    document.getElementById('get-directions').addEventListener('click', function () {
+        const startLocation = document.getElementById('start').value;
+        const endLocation = document.getElementById('end').value;
+
+        if (startLocation && endLocation) {
+            // Convert the locations to coordinates (latitude and longitude)
+            getCoordinates(startLocation, function (startCoords) {
+                getCoordinates(endLocation, function (endCoords) {
+                    // Fetch and display directions
+                    fetchDirections(startCoords, endCoords);
+                });
+            });
+            // fetchDirections(startLocation, endLocation);
+        } else {
+            alert('Please enter both start and end locations.');
+        }
+    });
+    function isLatLong(input) {
+        const latLongRegex = /^-?([1-8]?[1-9]|[1-9]0)\.{1}\d{1,6},\s?-?((1[0-7][0-9]){1}\.{1}\d{1,6}|[1-9]?[0-9]\.{1}\d{1,6})$/;
+        return latLongRegex.test(input.trim());
+    }
+    function getCoordinates(location, callback) {
+        // Use the Goong API or another geocoding service to convert the location to coordinates
+        // if (isLatLong(input)) {
+        //     const [lat, lng] = input.split(',').map(Number);
+        //     console.log('Input is coordinates:', lat, lng);
+        //     // Add a marker at the given coordinates
+        //     addMarker([lng, lat]);
+        // } else {
+        //     console.log('Input is a location name:', input);
+        //     // Use the location name to fetch coordinates
+        //     getCoordinates(input, function (coords) {
+        //         // Add a marker at the fetched coordinates
+        //         addMarker(coords);
+        //     });
+        // }
+
+        const apiLink = `${apiUrl}/Geocode?address=${encodeURIComponent(location)}&api_key=${apiKey}`;
+        fetch(apiLink)
+            .then(response => response.json())
+            .then(data => {
+                if (data.results && data.results.length > 0) {
+                    const coords = data.results[0].geometry.location;
+                    callback([coords.lng, coords.lat]);
+                } else {
+                    alert('Could not find coordinates for the location: ' + location);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching coordinates:', error);
+                alert('Error fetching coordinates for the location: ' + location);
+            });
+    }
+
+    function fetchDirections(startCoords, endCoords) {
+        console.log(startCoords)
+        const origin = `${startCoords[1]},${startCoords[0]}`;
+        const destination = `${endCoords[1]},${endCoords[0]}`;
+        console.log("orgin" + origin);
+        const apiLink = `${apiUrl}/direction?origin=${origin}&destination=${destination}&vehicle=${directionVehicle}&api_key=${apiKey}`;
+        // const url = `https://rsapi.goong.io/direction?origin=${origin}&destination=${destination}&vehicle=car&api_key=${apiKey}`;
+        console.log(apiLink);
+        fetch(apiLink)
+            .then(response => response.json())
+            .then(data => {
+                if (data.routes && data.routes.length > 0) {
+                    const route = data.routes[0].overview_polyline.points;
+                    const distance = data.routes[0].legs[0].distance.text;
+                    const time = data.routes[0].legs[0].duration.text;
+                    const decodedRoute = decodePolyline(route);
+                    console.log("decodedRoute" + decodedRoute );
+                    displayRoute(decodedRoute, startCoords, endCoords, distance, time);
+                } else {
+                    alert('Could not find a route.');
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching directions:', error);
+                alert('Error fetching directions.');
+            });
+    }
+
+    function decodePolyline(encoded) {
+        var points = [];
+        var index = 0, len = encoded.length;
+        var lat = 0, lng = 0;
+
+        while (index < len) {
+            var b, shift = 0, result = 0;
+            do {
+                b = encoded.charAt(index++).charCodeAt(0) - 63;
+                result |= (b & 0x1f) << shift;
+                shift += 5;
+            } while (b >= 0x20);
+            var dlat = ((result & 1) ? ~(result >> 1) : (result >> 1));
+            lat += dlat;
+
+            shift = 0;
+            result = 0;
+            do {
+                b = encoded.charAt(index++).charCodeAt(0) - 63;
+                result |= (b & 0x1f) << shift;
+                shift += 5;
+            } while (b >= 0x20);
+            var dlng = ((result & 1) ? ~(result >> 1) : (result >> 1));
+            lng += dlng;
+
+            points.push([lng * 1e-5, lat * 1e-5]);
+        }
+
+        return points;
+    }
+
+    function displayRoute(route, startCoords, endCoords, distance, time) {
+        routes.push({ route, startCoords, endCoords, distance, time });
+
+        if (map.getSource('route')) {
+            map.removeLayer('route');
+            map.removeSource('route');
+        }
+        
+
+        const start = String(startCoords).split(',').map(x => Number(x));
+        const end = String(endCoords).split(',').map(x => Number(x));
+        const longLatStart = [start[0], start[1]];
+        const longLatEnd = [end[0], end[1]];
+        //add marker to start and end location
+        addMarker(longLatStart)
+        addMarker(longLatEnd)
+        map.addSource('route', {
+            'type': 'geojson',
+            'data': {
+                'type': 'Feature',
+                'properties': {},
+                'geometry': {
+                    'type': 'LineString',
+                    'coordinates': route
+                }
+            }
+        });
+        map.addLayer({
+            'id': 'route',
+            'type': 'line',
+            'source': 'route',
+            'layout': {
+                'line-join': 'round',
+                'line-cap': 'round'
+            },
+            'paint': {
+                'line-color': '#3887be',
+                'line-width': 5,
+                'line-opacity': 0.9
+            }
+        });
+        // Find the midpoint of the route to show popup
+        const midPoint = route[Math.floor(route.length / 2)];
+        // Add a marker for the midpoint with distance + time information
+        new maplibregl.Popup()
+            .setLngLat(midPoint)
+            .setHTML(`<p>Khoảng cách: ${distance}</p> <p>Thời gian: ${time}</p> <br/>`)
+            .addTo(map);
+
+        map.fitBounds(route.reduce(function (bounds, coord) {
+            return bounds.extend(coord);
+        }, new maplibregl.LngLatBounds(route[0], route[0])));
+    }
+</script>
