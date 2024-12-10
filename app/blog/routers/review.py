@@ -14,6 +14,38 @@ router = APIRouter(
 
 get_db = database.get_db
 
+@router.post("/tour/")
+async def create_by_userId_tourID(
+    title :str,
+    content :str, 
+    rating : float, 
+    user_id: int,
+    tour_id: int, 
+    language: str,
+    companion: str, 
+    date_create: date = date.today(),
+    
+    images: list[UploadFile] = [],
+    db: Session = Depends(get_db)):
+    
+    sh_review= schemas.Review(
+        title = title,
+        content = content,
+        rating = rating,
+        date_create = date_create,
+        language = language,
+        companion = companion,
+        )
+    new_review = review.create_by_userId_tourID(user_id, tour_id, sh_review, db)    
+    for img in images:
+        sc_image = schemas.Image(
+            review_id = new_review.id
+        )
+        await image.create_image(db, request=sc_image, image=img)
+    
+    return schemas.ShowReview.from_orm(new_review)
+
+
 @router.post("/")
 async def create_by_userId_destinationId(
     title :str,

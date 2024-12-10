@@ -44,6 +44,39 @@ def create_by_userId_destinationId(user_id: int, destination_id: int,  request: 
                             detail=f"Error creating review: {str(e)}")
     
 
+def create_by_userId_tourID(user_id: int, tour_id: int,  request: schemas.Review, db: Session):
+    try:
+        # Kiểm tra xem user đã review destination này chưa
+        existing_review = db.query(models.Review).filter(
+            models.Review.user_id == user_id,
+            models.Review.tour_id == tour_id
+        ).first()
+        
+        if existing_review:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User has already reviewed this destination"
+            )
+
+        new_review = models.Review(
+            title = request.title,
+            content = request.content,
+            rating = request.rating,
+            date_create = request.date_create,
+            language = request.language,
+            companion = request.companion,
+            user_id = user_id,
+            tour_id = tour_id
+        )
+        db.add(new_review)
+        db.commit()  # Chờ hoàn tất việc commit
+        db.refresh(new_review)  # Chờ làm mới đối tượng mới
+        
+        return new_review
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail=f"Error creating review: {str(e.detail)}")
+    
 def get_by_id(id: int, db: Session):
     try:
         review = db.query(models.Review).filter(models.Review.id == id).first()  # Chờ truy vấn
@@ -107,9 +140,10 @@ def update_by_id(id: int, request: schemas.Review, db: Session):
     
         db.commit()  # Chờ hoàn tất việc commit
         db.refresh(review)  # Chờ làm mới đối tượng mới
-          
+        
+        if destination_id:
           # Cập nhật rating của destination
-        destination.update_destination_rating(destination_id=destination_id, db=db)
+            destination.update_destination_rating(destination_id=destination_id, db=db)
         return review
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

@@ -185,8 +185,9 @@ class ShowReview(Review):
     id: int
     # Foreign Key
     user_id : int
-    destination_id :int
-    images: List[ShowImage]
+    destination_id :Optional[int]
+    tour_id: Optional[int]
+    images: Optional[List[ShowImage]]
     class Config():
         orm_mode = True
    
@@ -313,3 +314,4 @@ class UserCountDetail(BaseModel):
     
     class Config():
         orm_mode = True
+
