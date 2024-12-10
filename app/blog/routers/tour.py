@@ -38,8 +38,13 @@ def delete_tour(
 
 @router.get("/{id}")
 def get_tour_by_id_endpoint(id: int, db: Session = Depends(get_db)):
-    tour_info =  tour.get_tour_by_id(tour_id=id, db=db)
-    return schemas.ShowTour.from_orm(tour_info)
+    tour_info =  schemas.ShowTour.from_orm(tour.get_tour_by_id(tour_id=id, db=db)).dict()
+    rating_info = tour.get_ratings_and_reviews_number_of_tourID(tour_info["id"], db)
+    tour_info.update({
+        "rating": rating_info["ratings"],
+        "numOfReviews": rating_info["numberOfReviews"]
+    })
+    return tour_info
 
 @router.get("/")
 def get_all_tour_endpoint(
