@@ -618,57 +618,88 @@
         return points;
     }
 
-    function displayRoute(route, startCoords, endCoords, distance, time) {
-        routes.push({ route, startCoords, endCoords, distance, time });
+function displayRoute(route, startCoords, endCoords, distance, time) {
+    // Lưu trữ đường đi vào mảng
+    routes.push({ route, startCoords, endCoords, distance, time });
 
-        if (map.getSource('route')) {
-            map.removeLayer('route');
-            map.removeSource('route');
+    // Xóa layer cũ nếu có
+    if (map.getSource('all-routes')) {
+        map.removeLayer('all-routes');
+        map.removeSource('all-routes');
+    }
+
+    // Tạo một GeoJSON FeatureCollection cho tất cả các đường
+    const features = routes.map(routeData => ({
+        type: 'Feature',
+        properties: {
+            distance: routeData.distance,
+            time: routeData.time
+        },
+        geometry: {
+            type: 'LineString',
+            coordinates: routeData.route
         }
-        
+    }));
 
-        const start = String(startCoords).split(',').map(x => Number(x));
-        const end = String(endCoords).split(',').map(x => Number(x));
-        const longLatStart = [start[0], start[1]];
-        const longLatEnd = [end[0], end[1]];
-        //add marker to start and end location
-        addMarker(longLatStart)
-        addMarker(longLatEnd)
-        map.addSource('route', {
-            'type': 'geojson',
-            'data': {
-                'type': 'Feature',
-                'properties': {},
-                'geometry': {
-                    'type': 'LineString',
-                    'coordinates': route
-                }
-            }
-        });
-        map.addLayer({
-            'id': 'route',
-            'type': 'line',
-            'source': 'route',
-            'layout': {
-                'line-join': 'round',
-                'line-cap': 'round'
-            },
-            'paint': {
-                'line-color': '#3887be',
-                'line-width': 5,
-                'line-opacity': 0.9
-            }
-        });
-        // Find the midpoint of the route to show popup
-        const midPoint = route[Math.floor(route.length / 2)];
-        // Add a marker for the midpoint with distance + time information
+    // Thêm source cho tất cả các đường đi
+    map.addSource('all-routes', {
+        'type': 'geojson',
+        'data': {
+            'type': 'FeatureCollection',
+            'features': features
+        }
+    });
+
+    // Thêm layer cho tất cả các đường đi
+    map.addLayer({
+        'id': 'all-routes',
+        'type': 'line',
+        'source': 'all-routes',
+        'layout': {
+            'line-join': 'round',
+            'line-cap': 'round'
+        },
+        'paint': {
+            'line-color': '#3887be', // Màu giống nhau cho tất cả routes
+            'line-width': 15,
+            'line-opacity': 0.9
+        }
+    });
+
+    // Hiển thị marker cho điểm bắt đầu và kết thúc của mỗi đường
+    routes.forEach(routeData => {
+        const startLngLat = [routeData.startCoords[0], routeData.startCoords[1]];
+        const endLngLat = [routeData.endCoords[0], routeData.endCoords[1]];
+        
+        // Marker cho điểm bắt đầu
+        new maplibregl.Marker({ color: 'green' })
+            .setLngLat(startLngLat)
+            .setPopup(new maplibregl.Popup().setHTML('<p>Điểm bắt đầu</p>'))
+            .addTo(map);
+        
+        // Marker cho điểm kết thúc
+        new maplibregl.Marker({ color: 'red' })
+            .setLngLat(endLngLat)
+            .setPopup(new maplibregl.Popup().setHTML('<p>Điểm kết thúc</p>'))
+            .addTo(map);
+    });
+
+    // Hiển thị popup cho mỗi đường
+    features.forEach(feature => {
+        const midPoint = feature.geometry.coordinates[Math.floor(feature.geometry.coordinates.length / 2)];
         new maplibregl.Popup()
             .setLngLat(midPoint)
-            .setHTML(`<p>Khoảng cách: ${distance}</p> <p>Thời gian: ${time}</p> <br/>`)
+            .setHTML(`<p>Khoảng cách: ${feature.properties.distance}</p> <p>Thời gian: ${feature.properties.time}</p>`)
             .addTo(map);
+    });
 
-        map.fitBounds(route.reduce(function (bounds, coord) {
-            return bounds.extend(coord);
-        }, new maplibregl.LngLatBounds(route[0], route[0])));
-    }
+    // Đặt lại vùng nhìn của bản đồ
+    const bounds = new maplibregl.LngLatBounds();
+    routes.forEach(routeData => {
+        routeData.route.forEach(coord => {
+            bounds.extend(coord);
+        });
+    });
+    map.fitBounds(bounds, { padding: 20 });
+}
 </script>

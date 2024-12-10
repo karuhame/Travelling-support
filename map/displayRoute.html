@@ -1,0 +1,38 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hiển thị Lộ trình Goong</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>Hiển thị Lộ trình Goong</h1>
+    <div id="route"></div>
+
+    <script>
+        const apiKey = 'ArPlUISaEBAdJFTABi9dcNGcue8WQ4cOAuGcNoBE';
+        const origin = '20.981971,105.864323'; // Điểm xuất phát
+        const destination = '21.031011,105.783206'; // Điểm đến
+        const vehicle = 'car'; // Loại phương tiện
+
+        const url = `https://rsapi.goong.io/direction?origin=${origin}&destination=${destination}&vehicle=car&api_key=${apiKey}`;
+
+
+        $.get(url)
+            .done(function(data) {
+                console.log(data);
+                if (data.status === "OK") {
+
+                    $('#route').html(JSON.stringify(data.routes, null, 2));
+                } else {
+                    $('#route').html('Không tìm thấy lộ trình: ' + data.status);
+                }
+            })
+            .fail(function() {
+                $('#route').html('Có lỗi xảy ra khi gọi API.');
+            });
+    </script>
+</body>
+</html>
