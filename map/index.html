@@ -522,6 +522,7 @@
             alert('Please enter both start and end locations.');
         }
     });
+
     function isLatLong(input) {
         const latLongRegex = /^-?([1-8]?[1-9]|[1-9]0)\.{1}\d{1,6},\s?-?((1[0-7][0-9]){1}\.{1}\d{1,6}|[1-9]?[0-9]\.{1}\d{1,6})$/;
         return latLongRegex.test(input.trim());
