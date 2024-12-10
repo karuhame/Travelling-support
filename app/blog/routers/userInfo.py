@@ -48,8 +48,14 @@ async def create_user_info_by_userid(
         userInfo_id= user_info.id
     )
 
+    if not user_info.image:
+        await image.create_image(db, sc_image, image=image_inp)
+    else:
+        if user_info.image.blob_name:
+            await image.update_image(db,image_inp=image_inp, id=user_info.image.id)
+        else:
+            await image.create_image(db, sc_image, image=image_inp)
     # Thêm hình ảnh vào thông tin người dùng
-    await image.create_image(db, request=sc_image, image=image_inp)
     
     return schemas.ShowUserInfo.from_orm(user_info)
 
@@ -90,10 +96,14 @@ async def update_user_info(
     )
     
     user_info = userInfo.update_user_info(address=address, info=info, id=id, db=db)
-    if user_info.image.blob_name:
-        await image.update_image(db,image_inp=image_inp, id=user_info.image.id)
-    else:
+    if not user_info.image:
         await image.create_image(db, sc_image, image=image_inp)
+    else:
+        if user_info.image.blob_name:
+            await image.update_image(db,image_inp=image_inp, id=user_info.image.id)
+        else:
+            await image.create_image(db, sc_image, image=image_inp)
+        
     return schemas.ShowUserInfo.from_orm(user_info)
 @router.delete("/{id}")
 async def delete_user_info(id: int, db: Session = Depends(get_db), current_user: schemas.User = Depends(oauth2.get_current_user)):
