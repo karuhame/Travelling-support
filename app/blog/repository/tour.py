@@ -35,7 +35,7 @@ def create(db: Session, request: schemas.Tour):
 
 def get_ratings_and_reviews_number_of_tourID(id: int, db: Session):
     try:
-        reviews = db.query(models.Review).filter(models.Review.id == id).all()
+        reviews = db.query(models.Review).filter(models.Review.tour_id == id).all()
         if reviews:
             # Calculate total ratings and number of reviews
             total_ratings = sum(review.rating for review in reviews)
