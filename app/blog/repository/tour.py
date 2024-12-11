@@ -73,11 +73,16 @@ def get_tour_by_id(tour_id: int, db: Session):
 
 
 
-def get_all_tour(db: Session, city_id: int):
+def get_all_tour(db: Session, city_id: int, user_id: int):
     try:
         # Query to get all tours
-        if city_id:        
-            tours = db.query(models.Tour).filter(models.Tour.city_id == city_id).all()
+        if city_id:   
+            if user_id:
+                tours = db.query(models.Tour).filter(models.Tour.city_id == city_id, models.Tour.user_id == user_id).all()
+            else:
+                tours = db.query(models.Tour).filter(models.Tour.city_id == city_id).all()
+        elif user_id:
+            tours = db.query(models.Tour).filter(models.Tour.user_id == user_id).all()
         else: 
             tours = db.query(models.Tour).all()
         return tours

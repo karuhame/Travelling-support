@@ -46,15 +46,23 @@ def get_tour_by_id_endpoint(id: int, db: Session = Depends(get_db)):
     })
     return tour_info
 
-@router.get("/")
+@router.get("/",
+    description=(
+        "### Get tour\n\n"
+        "This endpoint allows you to retrieve tour based on the following criteria:\n\n"
+        "- **Fill `user_id`**: Get all tour of 1 user;\n"
+        "- **Fill `city_id`**: Get all tour in 1 city;\n"
+        "- **Fill both `user_id` and `city_id`**: Get all tour of 1 user in 1 city;\n"
+))
 def get_all_tour_endpoint(
     city_id: int = None,
+    user_id: int = None,
     
     is_popular: bool = False,
     db: Session = Depends(get_db)
 ):
     
-    results = tour.get_all_tour(db=db, city_id=city_id)
+    results = tour.get_all_tour(db=db, city_id=city_id, user_id=user_id)
 
     # Nếu cần sắp xếp theo đánh giá
     if is_popular:
