@@ -174,4 +174,5 @@ def get_reviews(
         if (language is None or item.language == language) and (companion is None or item.companion == companion):
             results.append(item)
 
-    return results  # Return the filtered results
+    return [schemas.ShowReview.from_orm(review) for review in results]
+    # return results  # Return the filtered results
