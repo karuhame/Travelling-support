@@ -16,12 +16,12 @@ get_db = database.get_db
 @router.post("/")
 async def create_user_info_by_userid(
     user_id: int,
+    city_id: int,
     description: str = None,
     phone_number: str = None,
     district: str = None,
     street: str = None,
     ward: str = None,
-    city_id: int = None,
     image_inp: Optional[UploadFile] = File(None),  
     
     db: Session = Depends(get_db),
@@ -67,12 +67,12 @@ def get_user_info(id: int, db: Session = Depends(get_db)):
 @router.put("/{id}")
 async def update_user_info(
     id: int,
+    city_id: int,
     description: str = None,
     phone_number: str = None,
     district: str = None,
     street: str = None,
     ward: str = None,
-    city_id: int = None,
     image_inp: Optional[UploadFile] = File(None),  
     db: Session = Depends(get_db),
     current_user: schemas.User = Depends(oauth2.get_current_user)
